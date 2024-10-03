@@ -9,15 +9,17 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
+// SignUpScreen component
 const SignUpScreen = ({ navigation }) => {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [username, setUsername] = useState(''); // State for username input
+  const [email, setEmail] = useState(''); // State for email input
+  const [password, setPassword] = useState(''); // State for password input
+  const [confirmPassword, setConfirmPassword] = useState(''); // State for confirm password input
+  const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // State to toggle confirm password visibility
+  const [agreeTerms, setAgreeTerms] = useState(false); // State for terms agreement checkbox
 
+  // Function to handle sign up button press
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.decorativeCircles}>
@@ -103,6 +105,7 @@ const SignUpScreen = ({ navigation }) => {
   );
 };
 
+// Styles for the SignUpScreen component
 const styles = StyleSheet.create({
   container: {
     flex: 1,
