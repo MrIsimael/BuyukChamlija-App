@@ -1,4 +1,6 @@
+/* eslint-disable-next-line no-unused-vars */
 import { StatusBar } from 'expo-status-bar';
+/* eslint-disable-next-line no-unused-vars */
 import { StyleSheet, Text, View } from 'react-native';
 
 export default function App() {
