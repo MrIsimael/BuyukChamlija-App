@@ -1,22 +1,13 @@
 /* eslint-disable-next-line no-unused-vars */
+import React from 'react';
+import AppNavigation from './src/navigation/appNavigation';
 import { StatusBar } from 'expo-status-bar';
-/* eslint-disable-next-line no-unused-vars */
-import { StyleSheet, Text, View } from 'react-native';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
+    <>
       <StatusBar style="auto" />
-    </View>
+      <AppNavigation />
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
