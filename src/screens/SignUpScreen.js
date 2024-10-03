@@ -32,14 +32,14 @@ const SignUpScreen = ({ navigation }) => {
           <TextInput
             style={styles.input}
             placeholder="Username"
-            placeholderTextColor="#666"
+            placeholderTextColor="#A79C9C"
             value={username}
             onChangeText={setUsername}
           />
           <TextInput
             style={styles.input}
             placeholder="Email"
-            placeholderTextColor="#666"
+            placeholderTextColor="#A79C9C"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -48,16 +48,19 @@ const SignUpScreen = ({ navigation }) => {
             <TextInput
               style={styles.passwordInput}
               placeholder="Create Password"
-              placeholderTextColor="#666"
+              placeholderTextColor="#A79C9C"
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
             />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <TouchableOpacity
+              style={styles.eyeIconContainer}
+              onPress={() => setShowPassword(!showPassword)}
+            >
               <Feather
                 name={showPassword ? 'eye' : 'eye-off'}
-                size={24}
-                color="#666"
+                size={20}
+                color="#A79C9C"
               />
             </TouchableOpacity>
           </View>
@@ -71,12 +74,13 @@ const SignUpScreen = ({ navigation }) => {
               secureTextEntry={!showConfirmPassword}
             />
             <TouchableOpacity
+              style={styles.eyeIconContainer}
               onPress={() => setShowConfirmPassword(!showConfirmPassword)}
             >
               <Feather
                 name={showConfirmPassword ? 'eye' : 'eye-off'}
-                size={24}
-                color="#666"
+                size={20}
+                color="#A79C9C"
               />
             </TouchableOpacity>
           </View>
@@ -144,28 +148,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 30,
-    alignItems: 'center',
+    textAlign: 'center',
   },
   inputContainer: {
     marginBottom: 20,
   },
   input: {
-    backgroundColor: '#2A2C41',
+    flexDirection: 'row',
+    backgroundColor: 'transparent',
     borderRadius: 25,
     padding: 15,
     marginBottom: 15,
     color: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#A79C9C',
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2A2C41',
+    backgroundColor: 'transparent',
     borderRadius: 25,
     marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#A79C9C',
+  },
+  eyeIconContainer: {
+    paddingRight: 15,
   },
   passwordInput: {
     flex: 1,
@@ -202,7 +214,7 @@ const styles = StyleSheet.create({
   },
   signUpButtonText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: 'bold',
   },
   signInContainer: {
