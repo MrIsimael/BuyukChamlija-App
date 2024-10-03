@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import { Feather, FontAwesome } from '@expo/vector-icons';
 
@@ -13,6 +14,16 @@ const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  const handleSignIn = () => {
+    // Here you would typically implement your authentication logic
+    // For this example, we'll just check if email and password are not empty
+    if (email.trim() && password.trim()) {
+      navigation.navigate('Home');
+    } else {
+      Alert.alert('Error', 'Please enter both email and password.');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -26,7 +37,7 @@ const LoginScreen = ({ navigation }) => {
           <TextInput
             style={styles.input}
             placeholder="Email"
-            placeholderTextColor="#666"
+            placeholderTextColor="#A79C9C"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -35,16 +46,19 @@ const LoginScreen = ({ navigation }) => {
             <TextInput
               style={styles.passwordInput}
               placeholder="Password"
-              placeholderTextColor="#666"
+              placeholderTextColor="#A79C9C"
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
             />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <TouchableOpacity
+              style={styles.eyeIconContainer}
+              onPress={() => setShowPassword(!showPassword)}
+            >
               <Feather
                 name={showPassword ? 'eye' : 'eye-off'}
-                size={24}
-                color="#666"
+                size={20}
+                color="#A79C9C"
               />
             </TouchableOpacity>
           </View>
@@ -52,7 +66,7 @@ const LoginScreen = ({ navigation }) => {
         <TouchableOpacity style={styles.forgotPasswordContainer}>
           <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.signInButton}>
+        <TouchableOpacity style={styles.signInButton} onPress={handleSignIn}>
           <Text style={styles.signInButtonText}>Sign In</Text>
         </TouchableOpacity>
         <View style={styles.signUpContainer}>
@@ -123,7 +137,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 30,
@@ -133,23 +147,31 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   input: {
-    backgroundColor: '#2A2C41',
+    flexDirection: 'row',
+    backgroundColor: 'transparent',
     borderRadius: 25,
     padding: 15,
     marginBottom: 15,
     color: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#A79C9C',
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2A2C41',
+    backgroundColor: 'transparent',
     borderRadius: 25,
     marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#A79C9C',
   },
   passwordInput: {
     flex: 1,
     padding: 15,
     color: '#FFFFFF',
+  },
+  eyeIconContainer: {
+    paddingRight: 15,
   },
   forgotPasswordContainer: {
     alignItems: 'flex-end',
@@ -160,15 +182,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   signInButton: {
-    backgroundColor: '#FF724C',
+    backgroundColor: 'transparent',
     borderRadius: 25,
     padding: 15,
     alignItems: 'center',
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#FF724C',
   },
   signInButtonText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: 'bold',
   },
   signUpContainer: {
