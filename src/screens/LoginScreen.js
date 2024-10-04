@@ -16,8 +16,6 @@ const LoginScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSignIn = () => {
-    // Here you would typically implement your authentication logic
-    // For this example, we'll just check if email and password are not empty
     if (email.trim() && password.trim()) {
       navigation.navigate('Home');
     } else {
@@ -140,11 +138,12 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 30,
+    marginBottom: 70,
+    marginTop: 50,
     textAlign: 'center',
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: -20,
   },
   input: {
     flexDirection: 'row',
@@ -161,7 +160,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'transparent',
     borderRadius: 25,
-    marginBottom: 15,
+    marginBottom: 58.5,
     borderWidth: 1,
     borderColor: '#A79C9C',
   },
@@ -175,18 +174,20 @@ const styles = StyleSheet.create({
   },
   forgotPasswordContainer: {
     alignItems: 'flex-end',
-    marginBottom: 20,
+    marginBottom: 40,
+    marginRight: 10,
+    marginTop: -30,
   },
   forgotPasswordText: {
     color: '#FF724C',
-    fontSize: 14,
+    fontSize: 16.5,
   },
   signInButton: {
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(255, 114, 76, 0.25)', // #FF724C with 25% opacity
     borderRadius: 25,
     padding: 15,
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
     borderWidth: 1,
     borderColor: '#FF724C',
   },
@@ -198,21 +199,22 @@ const styles = StyleSheet.create({
   signUpContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: 40,
   },
   signUpText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 18,
   },
   signUpLink: {
     color: '#FF724C',
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   separatorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
+    paddingHorizontal: 10,
   },
   separator: {
     flex: 1,
@@ -223,7 +225,7 @@ const styles = StyleSheet.create({
   separatorText: {
     color: '#FFFFFF',
     paddingHorizontal: 10,
-    fontSize: 14,
+    fontSize: 16,
   },
   socialButtonsContainer: {
     flexDirection: 'row',

@@ -32,24 +32,24 @@ const Home = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
-        <View style={styles.header}>
-          <TouchableOpacity>
-            <Feather name="menu" size={24} color="white" />
-          </TouchableOpacity>
-          <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.headerIcon}>
-              <Feather name="search" size={24} color="white" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.headerIcon}>
-              <Feather name="shopping-cart" size={24} color="white" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.headerIcon}>
-              <Feather name="user" size={24} color="white" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
         <View style={styles.welcomeSection}>
+          <View style={styles.header}>
+            <TouchableOpacity>
+              <Feather name="menu" size={20} color="white" />
+            </TouchableOpacity>
+            <View style={styles.headerRight}>
+              <TouchableOpacity style={styles.headerIcon}>
+                <Feather name="search" size={20} color="white" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.headerIcon}>
+                <Feather name="shopping-cart" size={20} color="white" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.headerIcon}>
+                <Feather name="user" size={20} color="white" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
           <Text style={styles.welcomeText}>Welcome to</Text>
           <Text style={styles.brandText}>Buyuk Chamlija</Text>
         </View>
@@ -123,13 +123,13 @@ const Home = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1E2238',
+    backgroundColor: '#2A2C41',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    marginTop: 20,
   },
   headerRight: {
     flexDirection: 'row',
@@ -138,19 +138,21 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
   welcomeSection: {
-    padding: 16,
-    backgroundColor: '#FF724C',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    padding: 20,
+    backgroundColor: 'rgba(255, 114, 76, 0.25)',
   },
   welcomeText: {
-    fontSize: 18,
-    color: 'white',
-  },
-  brandText: {
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: 'bold',
     color: 'white',
+    marginTop: 60,
+    marginLeft: 20,
+  },
+  brandText: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    color: 'white',
+    marginLeft: 20,
   },
   section: {
     padding: 16,

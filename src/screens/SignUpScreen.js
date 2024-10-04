@@ -151,7 +151,8 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 30,
+    marginBottom: 40,
+    marginTop: -15,
     textAlign: 'center',
   },
   inputContainer: {
@@ -187,11 +188,13 @@ const styles = StyleSheet.create({
   termsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 50,
+    marginTop: -20,
+    marginLeft: 10,
   },
   checkbox: {
-    width: 20,
-    height: 20,
+    width: 22,
+    height: 22,
     borderWidth: 2,
     borderColor: '#FF724C',
     borderRadius: 4,
@@ -204,7 +207,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   signUpButton: {
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(255, 114, 76, 0.25)',
     borderRadius: 25,
     padding: 15,
     alignItems: 'center',
@@ -214,21 +217,22 @@ const styles = StyleSheet.create({
   },
   signUpButtonText: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
   },
   signInContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: -50,
+    marginBottom: -60,
+    marginTop: -10,
   },
   signInText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 16,
   },
   signInLink: {
     color: '#FF724C',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
   },
 });
