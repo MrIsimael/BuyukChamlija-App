@@ -8,18 +8,46 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
-import { Feather, FontAwesome } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { getDoc, doc } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSignIn = () => {
-    if (email.trim() && password.trim()) {
-      navigation.navigate('Home');
-    } else {
+  const handleSignIn = async () => {
+    if (!email || !password) {
       Alert.alert('Error', 'Please enter both email and password.');
+      return;
+    }
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
+      const user = userCredential.user;
+
+      // Check if the user is a customer
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const userData = userDoc.data();
+
+      if (userData && userData.role === 'customer') {
+        navigation.navigate('Home');
+      } else {
+        // If not a customer, sign out and show an error
+        await auth.signOut();
+        Alert.alert(
+          'Error',
+          'This account is not authorized to use the mobile app.',
+        );
+      }
+    } catch (error) {
+      Alert.alert('Error', error.message);
     }
   };
 
@@ -61,9 +89,6 @@ const LoginScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
         </View>
-        <TouchableOpacity style={styles.forgotPasswordContainer}>
-          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-        </TouchableOpacity>
         <TouchableOpacity style={styles.signInButton} onPress={handleSignIn}>
           <Text style={styles.signInButtonText}>Sign In</Text>
         </TouchableOpacity>
@@ -71,25 +96,6 @@ const LoginScreen = ({ navigation }) => {
           <Text style={styles.signUpText}>Don't have an account? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
             <Text style={styles.signUpLink}>Sign Up</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.separatorContainer}>
-          <View style={styles.separator} />
-          <Text style={styles.separatorText}>Sign In with</Text>
-          <View style={styles.separator} />
-        </View>
-        <View style={styles.socialButtonsContainer}>
-          <TouchableOpacity style={styles.socialButton}>
-            <FontAwesome name="facebook" size={24} color="#3b5998" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.socialButton}>
-            <FontAwesome name="linkedin" size={24} color="#0077b5" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.socialButton}>
-            <FontAwesome name="yahoo" size={24} color="#410093" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.socialButton}>
-            <FontAwesome name="google" size={24} color="#db4437" />
           </TouchableOpacity>
         </View>
       </View>

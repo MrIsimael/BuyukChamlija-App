@@ -6,20 +6,61 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { setDoc, doc } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 
-// SignUpScreen component
 const SignUpScreen = ({ navigation }) => {
-  const [username, setUsername] = useState(''); // State for username input
-  const [email, setEmail] = useState(''); // State for email input
-  const [password, setPassword] = useState(''); // State for password input
-  const [confirmPassword, setConfirmPassword] = useState(''); // State for confirm password input
-  const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // State to toggle confirm password visibility
-  const [agreeTerms, setAgreeTerms] = useState(false); // State for terms agreement checkbox
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+
+  const handleSignUp = async () => {
+    if (!username || !email || !password || !confirmPassword) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+    if (!agreeTerms) {
+      Alert.alert('Error', 'Please agree to the Terms and Privacy Policy');
+      return;
+    }
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
+      const user = userCredential.user;
+
+      await setDoc(doc(db, 'users', user.uid), {
+        username: username,
+        email: email,
+        role: 'customer',
+        createdAt: new Date(),
+      });
+
+      Alert.alert('Success', 'Account created successfully', [
+        { text: 'OK', onPress: () => navigation.navigate('Login') },
+      ]);
+    } catch (error) {
+      Alert.alert('Error', error.message);
+    }
+  };
 
   // Function to handle sign up button press
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.decorativeCircles}>
@@ -68,7 +109,7 @@ const SignUpScreen = ({ navigation }) => {
             <TextInput
               style={styles.passwordInput}
               placeholder="Confirm Password"
-              placeholderTextColor="#666"
+              placeholderTextColor="#A79C9C"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry={!showConfirmPassword}
@@ -92,10 +133,10 @@ const SignUpScreen = ({ navigation }) => {
             </View>
           </TouchableOpacity>
           <Text style={styles.termsText}>
-            I agree with the Terms and Private Policy
+            I agree with the Terms and Privacy Policy
           </Text>
         </View>
-        <TouchableOpacity style={styles.signUpButton}>
+        <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
           <Text style={styles.signUpButtonText}>Sign Up</Text>
         </TouchableOpacity>
         <View style={styles.signInContainer}>
