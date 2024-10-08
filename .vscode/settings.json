@@ -2,5 +2,6 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
   "javascript.updateImportsOnFileMove.enabled": "always",
-  "javascript.suggest.autoImports": true
+  "javascript.suggest.autoImports": true,
+  "cSpell.words": ["Buyuk", "Chamlija", "firestore", "Karinja", "Zakaat"]
 }
