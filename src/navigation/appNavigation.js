@@ -3,9 +3,20 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import GetStarted from '../screens/GetStarted';
 import LoginScreen from '../screens/LoginScreen';
 import SignUpScreen from '../screens/SignUpScreen';
-import HomeScreen from '../screens/HomeScreen'; // Make sure to create this file
+import HomeScreen from '../screens/HomeScreen';
+import { isValidRoute } from './utils'; // Import the validation function
+import allowedRoutes from './allowedRoutes'; // Import the allowed routes
 
 const Stack = createNativeStackNavigator();
+
+const navigateTo = (navigation, route) => {
+  if (isValidRoute(route)) {
+    navigation.navigate(route);
+  } else {
+    console.warn('Invalid route:', route);
+    // Optionally, you can navigate to a default route or show an error screen
+  }
+};
 
 export default function AppNavigation() {
   return (

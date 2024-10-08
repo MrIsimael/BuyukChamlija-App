@@ -7,6 +7,7 @@ import {
   StyleSheet,
   SafeAreaView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -21,14 +22,44 @@ const SignUpScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
+
+  const validateUsername = username => {
+    return (
+      username.length >= 3 &&
+      username.length <= 20 &&
+      /^[a-zA-Z0-9_]+$/.test(username)
+    );
+  };
+
+  const checkPasswordStrength = password => {
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+    if (password.match(/\d/)) strength++;
+    if (password.match(/[^a-zA-Z\d]/)) strength++;
+    setPasswordStrength(strength);
+  };
 
   const handleSignUp = async () => {
     if (!username || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
+    if (!validateUsername(username)) {
+      Alert.alert(
+        'Error',
+        'Username must be 3-20 characters long and can only contain letters, numbers, and underscores',
+      );
+      return;
+    }
     if (password !== confirmPassword) {
       Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+    if (passwordStrength < 3) {
+      Alert.alert('Error', 'Please choose a stronger password');
       return;
     }
     if (!agreeTerms) {
@@ -36,6 +67,7 @@ const SignUpScreen = ({ navigation }) => {
       return;
     }
 
+    setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -55,11 +87,17 @@ const SignUpScreen = ({ navigation }) => {
         { text: 'OK', onPress: () => navigation.navigate('Login') },
       ]);
     } catch (error) {
-      Alert.alert('Error', error.message);
+      let errorMessage = 'An error occurred during sign up';
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already registered';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Please enter a valid email address';
+      }
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
-
-  // Function to handle sign up button press
 
   return (
     <SafeAreaView style={styles.container}>
@@ -91,7 +129,10 @@ const SignUpScreen = ({ navigation }) => {
               placeholder="Create Password"
               placeholderTextColor="#A79C9C"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={text => {
+                setPassword(text);
+                checkPasswordStrength(text);
+              }}
               secureTextEntry={!showPassword}
             />
             <TouchableOpacity
@@ -104,6 +145,17 @@ const SignUpScreen = ({ navigation }) => {
                 color="#A79C9C"
               />
             </TouchableOpacity>
+          </View>
+          <View style={styles.passwordStrengthContainer}>
+            {[...Array(4)].map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.passwordStrengthBar,
+                  index < passwordStrength && styles.passwordStrengthBarFilled,
+                ]}
+              />
+            ))}
           </View>
           <View style={styles.passwordContainer}>
             <TextInput
@@ -136,8 +188,16 @@ const SignUpScreen = ({ navigation }) => {
             I agree with the Terms and Privacy Policy
           </Text>
         </View>
-        <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
-          <Text style={styles.signUpButtonText}>Sign Up</Text>
+        <TouchableOpacity
+          style={styles.signUpButton}
+          onPress={handleSignUp}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.signUpButtonText}>Sign Up</Text>
+          )}
         </TouchableOpacity>
         <View style={styles.signInContainer}>
           <Text style={styles.signInText}>Already have an account? </Text>
@@ -275,6 +335,21 @@ const styles = StyleSheet.create({
     color: '#FF724C',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  passwordStrengthContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  passwordStrengthBar: {
+    flex: 1,
+    height: 3,
+    backgroundColor: '#A79C9C',
+    marginHorizontal: 8,
+    borderRadius: 2,
+  },
+  passwordStrengthBarFilled: {
+    backgroundColor: '#FF724C',
   },
 });
 
