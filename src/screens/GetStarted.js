@@ -30,14 +30,14 @@ const GetStarted = ({ navigation }) => {
             style={[styles.button, styles.signUpButton]}
             onPress={() => navigation.navigate('SignUp')}
           >
-            <Text style={styles.buttonText}>SignUp</Text>
+            <Text style={styles.buttonText}>Customer</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, styles.signInButton]}
-            onPress={() => navigation.navigate('Login')}
+            onPress={() => navigation.navigate('AdminSignIn')}
           >
             <Text style={[styles.buttonText, styles.signInButtonText]}>
-              SignIn
+              Admin
             </Text>
           </TouchableOpacity>
         </View>
@@ -113,7 +113,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   signUpButton: {
-    backgroundColor: '#FF724C',
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#FF724C',
   },
   signInButton: {
     backgroundColor: 'transparent',
