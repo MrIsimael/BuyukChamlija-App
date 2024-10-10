@@ -4,7 +4,7 @@ import { doc, getDoc } from 'firebase/firestore';
 
 export const isUserAdmin = async uid => {
   try {
-    const adminDocRef = doc(db, 'admins', uid);
+    const adminDocRef = doc(db, 'users', uid);
     const adminDocSnap = await getDoc(adminDocRef);
     return adminDocSnap.exists();
   } catch (error) {
