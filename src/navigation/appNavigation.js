@@ -6,19 +6,30 @@ import LoginScreen from '../screens/LoginScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import HomeScreen from '../screens/HomeScreen';
 import AdminSignIn from '../screens/AdminSignIn';
-import AdminDashboard from '../screens/AdminDashboard';
-import AdminCreation from '../screens/AdminCreation'; // Import the AdminCreation screen
-import { isValidRoute } from './utils'; // Import the validation function
-import allowedRoutes from './allowedRoutes'; // Import the allowed routes
+import AdminCreation from '../screens/AdminCreation';
+import AdminDrawerNavigation from './AdminDrawerNavigation';
+import AdminViewItems from '../screens/AdminViewItems';
+import AdminCreateItem from '../screens/AdminCreateItem';
+import { isValidRoute } from './utils';
+import AdminCustomers from '../screens/AdminCustomers';
+import AdminVendors from '../screens/AdminVendors';
+import allowedRoutes from './allowedRoutes';
 
 const Stack = createNativeStackNavigator();
 
-const navigateTo = (navigation, route) => {
+const navigateTo = (navigation, route, params = {}) => {
   if (isValidRoute(route)) {
-    navigation.navigate(route);
+    if (
+      route.startsWith('Admin') &&
+      route !== 'AdminSignIn' &&
+      route !== 'AdminCreation'
+    ) {
+      navigation.navigate('AdminDrawer', { screen: route, params });
+    } else {
+      navigation.navigate(route, params);
+    }
   } else {
     console.warn('Invalid route:', route);
-    // Optionally, you can navigate to a default route or show an error screen
   }
 };
 
@@ -52,14 +63,33 @@ export default function AppNavigation() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name="AdminDashboard"
-          component={AdminDashboard}
-          options={{ headerShown: false }}
-        />
-
-        <Stack.Screen //Add the AdminCreation screen to the stack navigator
           name="AdminCreation"
           component={AdminCreation}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AdminDrawer"
+          component={AdminDrawerNavigation}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AdminViewItems"
+          component={AdminViewItems}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AdminCreateItem"
+          component={AdminCreateItem}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AdminCustomers"
+          component={AdminCustomers}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AdminVendors"
+          component={AdminVendors}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

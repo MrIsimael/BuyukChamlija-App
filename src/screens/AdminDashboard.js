@@ -8,6 +8,8 @@ import {
   Dimensions,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import AdminVendors from './AdminVendors'; // Assuming AdminVendors is imported for the Vendors section
 
 const { width } = Dimensions.get('window');
 const cardPadding = 30;
@@ -15,12 +17,14 @@ const cardGap = 20;
 const cardWidth = (width - 2 * cardPadding - cardGap) / 2;
 
 const AdminDashboard = () => {
+  const navigation = useNavigation();
+
   const dashboardItems = [
-    { title: 'Items' },
-    { title: 'Customers' },
-    { title: 'Vendors' },
-    { title: 'Transactions' },
-    { title: 'Stalls' },
+    { title: 'Items', screen: 'AdminItems' },
+    { title: 'Customers', screen: 'AdminCustomers' },
+    { title: 'Vendors', screen: 'AdminVendors' },
+    { title: 'Transactions', screen: null }, // Replace with screen when available
+    { title: 'Stalls', screen: null }, // Replace with screen when available
   ];
 
   const renderDashboardItem = (item, index) => {
@@ -30,7 +34,15 @@ const AdminDashboard = () => {
       : styles.dashboardItem;
 
     return (
-      <TouchableOpacity key={index} style={itemStyle}>
+      <TouchableOpacity
+        key={index}
+        style={itemStyle}
+        onPress={() => {
+          if (item.screen) {
+            navigation.navigate(item.screen);
+          }
+        }}
+      >
         <Text style={styles.itemTitle}>{item.title}</Text>
       </TouchableOpacity>
     );
@@ -40,7 +52,7 @@ const AdminDashboard = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.welcomeSection}>
         <View style={styles.header}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.openDrawer()}>
             <Feather name="menu" size={22} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
@@ -55,9 +67,9 @@ const AdminDashboard = () => {
       <View style={styles.decorativeCircles}>
         <View style={[styles.circle, styles.topLeftCircle]} />
         <View style={[styles.circle, styles.bottomRightCircle]} />
-        <View style={[styles.circle, styles.SideRightCircle]} />
-        <View style={[styles.circle, styles.SideRightCircle2]} />
-        <View style={[styles.circle, styles.SideLeftCircle]} />
+        <View style={[styles.circle, styles.sideRightCircle]} />
+        <View style={[styles.circle, styles.sideRightCircle2]} />
+        <View style={[styles.circle, styles.sideLeftCircle]} />
       </View>
     </SafeAreaView>
   );
@@ -95,7 +107,7 @@ const styles = StyleSheet.create({
   },
   dashboardItem: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 21,
+    borderRadius: 10,
     padding: 25,
     marginBottom: 20,
     justifyContent: 'center',
@@ -107,7 +119,7 @@ const styles = StyleSheet.create({
   },
   smallDashboardItem: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 21,
+    borderRadius: 10,
     padding: 25,
     width: cardWidth,
     justifyContent: 'center',
@@ -140,17 +152,17 @@ const styles = StyleSheet.create({
     left: 0,
     backgroundColor: '#FF724C',
   },
-  SideRightCircle: {
+  sideRightCircle: {
     bottom: 100,
     right: -100,
     backgroundColor: '#FF724C',
   },
-  SideRightCircle2: {
+  sideRightCircle2: {
     bottom: 290,
     right: -100,
     backgroundColor: '#FF724C',
   },
-  SideLeftCircle: {
+  sideLeftCircle: {
     top: 120,
     left: -100,
     backgroundColor: '#FF724C',

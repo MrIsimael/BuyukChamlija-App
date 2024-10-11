@@ -33,7 +33,7 @@ const AdminSignIn = ({ navigation }) => {
       console.log('Sign in result:', result);
       if (result.success) {
         console.log('Admin sign in successful');
-        navigation.navigate('AdminDashboard');
+        navigation.navigate('AdminDrawer', { screen: 'AdminDashboard' });
       } else {
         console.log('Admin sign in failed:', result.error);
         Alert.alert('Error', result.error);
