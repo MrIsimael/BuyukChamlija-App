@@ -5,7 +5,6 @@ import GetStarted from '../screens/GetStarted';
 import LoginScreen from '../screens/LoginScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import HomeScreen from '../screens/HomeScreen';
-import AdminSignIn from '../screens/AdminSignIn';
 import AdminCreation from '../screens/AdminCreation';
 import AdminDrawerNavigation from './AdminDrawerNavigation';
 import AdminViewItems from '../screens/AdminViewItems';
@@ -55,11 +54,6 @@ export default function AppNavigation() {
         <Stack.Screen
           name="Home"
           component={HomeScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="AdminSignIn"
-          component={AdminSignIn}
           options={{ headerShown: false }}
         />
         <Stack.Screen
