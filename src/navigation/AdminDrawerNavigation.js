@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -13,23 +13,37 @@ import {
 } from '@react-navigation/drawer';
 import { Feather } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
-import { auth } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore'; // Added Firestore imports
+import { auth, db } from '../firebase'; // Added db import
 import AdminDashboard from '../screens/AdminDashboard';
 import AdminItems from '../screens/AdminItems';
 import AdminCustomers from '../screens/AdminCustomers';
-import AdminVendors from '../screens/AdminVendors'; // Import the new screen
+import AdminVendors from '../screens/AdminVendors';
 
 const Drawer = createDrawerNavigator();
 const screenWidth = Dimensions.get('window').width;
 
 const CustomDrawerContent = props => {
-  const [adminName, setAdminName] = React.useState('Admin');
+  const [adminName, setAdminName] = useState('');
 
-  React.useEffect(() => {
-    const user = auth.currentUser;
-    if (user) {
-      setAdminName(user.displayName || user.email || 'Admin');
-    }
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setAdminName(userData.name || 'Admin');
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          setAdminName('Admin');
+        }
+      }
+    };
+
+    fetchUserData();
   }, []);
 
   const handleLogout = () => {
@@ -68,7 +82,9 @@ const CustomDrawerContent = props => {
         <View style={styles.avatarContainer}>
           <Feather name="user" size={40} color="#FFFFFF" />
         </View>
-        <Text style={styles.adminName}>{adminName}</Text>
+        <Text style={styles.adminName} numberOfLines={1} ellipsizeMode="tail">
+          {adminName}
+        </Text>
       </View>
       <DrawerContentScrollView {...props} style={styles.drawerItemsContainer}>
         {props.state.routes.map((route, index) => {
