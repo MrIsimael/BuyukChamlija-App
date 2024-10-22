@@ -10,12 +10,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { setDoc, doc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
 const SignUpScreen = ({ navigation }) => {
-  const [username, setUsername] = useState('');
+  const [name, setName] = useState(''); // Added name state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -25,12 +25,8 @@ const SignUpScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
 
-  const validateUsername = username => {
-    return (
-      username.length >= 3 &&
-      username.length <= 20 &&
-      /^[a-zA-Z0-9_]+$/.test(username)
-    );
+  const validateUsername = name => {
+    return name.length >= 3 && name.length <= 20;
   };
 
   const checkPasswordStrength = password => {
@@ -43,14 +39,14 @@ const SignUpScreen = ({ navigation }) => {
   };
 
   const handleSignUp = async () => {
-    if (!username || !email || !password || !confirmPassword) {
+    if (!name || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-    if (!validateUsername(username)) {
+    if (!validateUsername(name)) {
       Alert.alert(
         'Error',
-        'Username must be 3-20 characters long and can only contain letters, numbers, and underscores',
+        'Username must be 3-20 characters long. It can only contain letters',
       );
       return;
     }
@@ -76,9 +72,15 @@ const SignUpScreen = ({ navigation }) => {
       );
       const user = userCredential.user;
 
+      // Update the user's display name
+      await updateProfile(user, {
+        displayName: name,
+      });
+
+      // Save user data to Firestore
       await setDoc(doc(db, 'users', user.uid), {
-        username: username,
         email: email,
+        name: name, // Add name field
         role: 'customer',
         createdAt: new Date(),
       });
@@ -108,12 +110,13 @@ const SignUpScreen = ({ navigation }) => {
       <View style={styles.content}>
         <Text style={styles.title}>Sign Up</Text>
         <View style={styles.inputContainer}>
+          {/* Add Name input field */}
           <TextInput
             style={styles.input}
-            placeholder="Username"
+            placeholder="Full Name"
             placeholderTextColor="#A79C9C"
-            value={username}
-            onChangeText={setUsername}
+            value={name}
+            onChangeText={setName}
           />
           <TextInput
             style={styles.input}
