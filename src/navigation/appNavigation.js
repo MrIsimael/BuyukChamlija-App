@@ -12,6 +12,7 @@ import AdminCreateItem from '../screens/AdminCreateItem';
 import { isValidRoute } from './utils';
 import AdminCustomers from '../screens/AdminCustomers';
 import AdminVendors from '../screens/AdminVendors';
+import ForgotPassword from '../screens/ForgotPassword';
 import allowedRoutes from './allowedRoutes';
 
 const Stack = createNativeStackNavigator();
@@ -84,6 +85,11 @@ export default function AppNavigation() {
         <Stack.Screen
           name="AdminVendors"
           component={AdminVendors}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ForgotPassword"
+          component={ForgotPassword}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
