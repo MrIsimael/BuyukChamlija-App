@@ -14,6 +14,7 @@ import AdminCustomers from '../screens/AdminCustomers';
 import AdminVendors from '../screens/AdminVendors';
 import ForgotPassword from '../screens/ForgotPassword';
 import AdminSections from '../screens/AdminSections';
+import AdminStalls from '../screens/AdminStalls';
 import allowedRoutes from './allowedRoutes';
 
 const Stack = createNativeStackNavigator();
@@ -96,6 +97,11 @@ export default function AppNavigation() {
         <Stack.Screen
           name="AdminSections"
           component={AdminSections}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AdminStalls"
+          component={AdminStalls}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
