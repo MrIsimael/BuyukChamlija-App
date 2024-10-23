@@ -20,6 +20,7 @@ const AdminDashboard = () => {
   const navigation = useNavigation();
 
   const dashboardItems = [
+    { title: 'Sections', screen: 'AdminSections' },
     { title: 'Items', screen: 'AdminItems' },
     { title: 'Customers', screen: 'AdminCustomers' },
     { title: 'Vendors', screen: 'AdminVendors' },
