@@ -25,7 +25,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { db, auth } from '../firebase';
-import CreateStallModal from '../components/CreateStallModal';
+import CreateStallModal from '../components/CreateStallModal'; // Add this import
 
 const { width } = Dimensions.get('window');
 const cardPadding = 30;
@@ -33,8 +33,7 @@ const cardPadding = 30;
 const AdminStalls = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const params = route.params || {};
-  const sectionId = params.sectionId;
+  const { sectionId } = route.params;
 
   const [stalls, setStalls] = useState([]);
   const [vendors, setVendors] = useState([]);
@@ -46,12 +45,14 @@ const AdminStalls = () => {
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // Add this new state for form values
   const [formValues, setFormValues] = useState({
     stallNumber: '',
     stallName: '',
     description: '',
   });
 
+  // Add this new handler for form changes
   const handleChangeValues = useCallback((field, value) => {
     setFormValues(prev => ({
       ...prev,
@@ -59,6 +60,7 @@ const AdminStalls = () => {
     }));
   }, []);
 
+  // Check admin status
   const checkAdminStatus = useCallback(async () => {
     if (!auth.currentUser) {
       navigation.navigate('Login');
@@ -86,46 +88,66 @@ const AdminStalls = () => {
     }
   }, [navigation]);
 
+  // Fetch section details
   const fetchSectionDetails = useCallback(async () => {
-    if (!sectionId) return null;
-
     try {
       const sectionDoc = await getDoc(doc(db, 'sections', sectionId));
       if (sectionDoc.exists()) {
         setSectionDetails(sectionDoc.data());
+      } else {
+        Alert.alert('Error', 'Section not found');
+        navigation.goBack();
       }
     } catch (error) {
       console.error('Error fetching section details:', error);
+      Alert.alert('Error', 'Failed to load section details');
     }
-  }, [sectionId]);
+  }, [sectionId, navigation]);
 
+  // Fetch stalls
   const fetchStalls = useCallback(async () => {
     try {
       setIsLoading(true);
-      let stallsQuery;
-
-      if (sectionId) {
-        stallsQuery = query(
+      try {
+        const stallsQuery = query(
           collection(db, 'stalls'),
           where('sectionId', '==', sectionId),
+          orderBy('stallNumber', 'asc'),
         );
-      } else {
-        stallsQuery = query(collection(db, 'stalls'));
-      }
-
-      const querySnapshot = await getDocs(stallsQuery);
-      const stallsData = querySnapshot.docs
-        .map(doc => ({
+        const querySnapshot = await getDocs(stallsQuery);
+        const stallsData = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
-        }))
-        .sort((a, b) => {
-          const numA = parseInt(a.stallNumber);
-          const numB = parseInt(b.stallNumber);
-          return numA - numB;
-        });
+        }));
+        setStalls(stallsData);
+      } catch (error) {
+        if (error.code === 'failed-precondition') {
+          const simpleQuery = query(
+            collection(db, 'stalls'),
+            where('sectionId', '==', sectionId),
+          );
+          const querySnapshot = await getDocs(simpleQuery);
+          const stallsData = querySnapshot.docs
+            .map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+            }))
+            .sort((a, b) => {
+              const numA = parseInt(a.stallNumber);
+              const numB = parseInt(b.stallNumber);
+              return numA - numB;
+            });
 
-      setStalls(stallsData);
+          setStalls(stallsData);
+          Alert.alert(
+            'Notice',
+            'Creating database index for optimal performance. This may take a few minutes.',
+            [{ text: 'OK' }],
+          );
+        } else {
+          throw error;
+        }
+      }
     } catch (error) {
       console.error('Error fetching stalls:', error);
       Alert.alert('Error', 'Failed to load stalls. Please try again later.');
@@ -134,6 +156,7 @@ const AdminStalls = () => {
     }
   }, [sectionId]);
 
+  // Fetch vendors
   const fetchVendors = useCallback(async () => {
     try {
       const vendorsQuery = query(
@@ -152,6 +175,7 @@ const AdminStalls = () => {
     }
   }, []);
 
+  // Load data when component mounts
   useEffect(() => {
     const loadData = async () => {
       const isAdminUser = await checkAdminStatus();
@@ -169,11 +193,6 @@ const AdminStalls = () => {
   const handleCreateStall = useCallback(async () => {
     if (!formValues.stallName.trim() || !formValues.stallNumber.trim()) {
       Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
-
-    if (!sectionId) {
-      Alert.alert('Error', 'Please select a section first');
       return;
     }
 
@@ -206,12 +225,10 @@ const AdminStalls = () => {
         itemCount: 0,
       });
 
-      if (sectionDetails) {
-        const sectionRef = doc(db, 'sections', sectionId);
-        await updateDoc(sectionRef, {
-          stallCount: (sectionDetails.stallCount || 0) + 1,
-        });
-      }
+      const sectionRef = doc(db, 'sections', sectionId);
+      await updateDoc(sectionRef, {
+        stallCount: (sectionDetails.stallCount || 0) + 1,
+      });
 
       setModalVisible(false);
       setFormValues({
@@ -249,7 +266,7 @@ const AdminStalls = () => {
           onPress={() =>
             navigation.navigate('AdminItems', {
               stallId: stall.id,
-              sectionId: stall.sectionId,
+              sectionId: sectionId,
             })
           }
         >
@@ -279,12 +296,81 @@ const AdminStalls = () => {
             </Text>
           )}
           <View style={styles.stallFooter}>
-            <Text style={styles.itemCount}>{stall.itemCount || 0} Items</Text>
+            <Text style={styles.itemCount}>{stall.itemCount} Items</Text>
           </View>
         </TouchableOpacity>
       );
     },
-    [vendors, navigation],
+    [vendors, navigation, sectionId],
+  );
+
+  const VendorSelectionModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={showVendorModal}
+      onRequestClose={() => setShowVendorModal(false)}
+    >
+      <TouchableOpacity
+        activeOpacity={1}
+        style={styles.modalContainer}
+        onPress={() => setShowVendorModal(false)}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          style={[styles.modalContent, { maxHeight: '70%' }]}
+          onPress={e => e.stopPropagation()}
+        >
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              onPress={() => setShowVendorModal(false)}
+              style={styles.closeButton}
+            >
+              <Feather name="x" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Select Vendor</Text>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <TouchableOpacity
+              style={styles.vendorOption}
+              onPress={() => {
+                setSelectedVendorId(null);
+                setShowVendorModal(false);
+              }}
+            >
+              <Text style={styles.vendorOptionText}>Leave Vacant</Text>
+            </TouchableOpacity>
+
+            {vendors.map(vendor => (
+              <TouchableOpacity
+                key={vendor.id}
+                style={styles.vendorOption}
+                onPress={() => {
+                  setSelectedVendorId(vendor.id);
+                  setShowVendorModal(false);
+                }}
+              >
+                <View style={styles.vendorOptionContent}>
+                  <Feather
+                    name="user"
+                    size={20}
+                    color="#8F92A1"
+                    style={styles.vendorIcon}
+                  />
+                  <View>
+                    <Text style={styles.vendorOptionText}>
+                      {vendor.name || 'Unnamed Vendor'}
+                    </Text>
+                    <Text style={styles.vendorOptionEmail}>{vendor.email}</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
   );
 
   if (isLoading) {
@@ -313,62 +399,40 @@ const AdminStalls = () => {
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Feather name="arrow-left" size={22} color="#FFFFFF" />
           </TouchableOpacity>
-          {sectionId && (
-            <TouchableOpacity onPress={() => setModalVisible(true)}>
-              <Feather name="plus" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity onPress={() => setModalVisible(true)}>
+            <Feather name="plus" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
         <Text style={styles.headerTitle}>
-          {sectionDetails?.name || 'All Stalls'}
+          {sectionDetails?.name || 'Stalls'}
         </Text>
       </View>
 
       <ScrollView style={styles.content}>
-        {!sectionId && (
-          <View style={styles.warningContainer}>
-            <Text style={styles.warningText}>
-              Please select a section to add or manage stalls
-            </Text>
-            <TouchableOpacity
-              style={styles.selectSectionButton}
-              onPress={() => navigation.navigate('AdminSections')}
-            >
-              <Text style={styles.selectSectionButtonText}>Select Section</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {stalls && stalls.length === 0 ? (
+        {stalls.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.noStalls}>No stalls found</Text>
-            {sectionId && (
-              <Text style={styles.noStallsSubtext}>
-                Tap the + button to create a new stall
-              </Text>
-            )}
+            <Text style={styles.noStallsSubtext}>
+              Tap the + button to create a new stall
+            </Text>
           </View>
         ) : (
           stalls.map(renderStall)
         )}
       </ScrollView>
 
-      {sectionId && (
-        <>
-          <CreateStallModal
-            visible={modalVisible}
-            onClose={() => setModalVisible(false)}
-            onSubmit={handleCreateStall}
-            isSubmitting={isSubmitting}
-            values={formValues}
-            onChangeValues={handleChangeValues}
-            vendors={vendors}
-            selectedVendorId={selectedVendorId}
-            setShowVendorModal={setShowVendorModal}
-          />
-          <VendorSelectionModal />
-        </>
-      )}
+      <CreateStallModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onSubmit={handleCreateStall}
+        isSubmitting={isSubmitting}
+        values={formValues}
+        onChangeValues={handleChangeValues}
+        vendors={vendors}
+        selectedVendorId={selectedVendorId}
+        setShowVendorModal={setShowVendorModal}
+      />
+      <VendorSelectionModal />
 
       <View style={styles.decorativeCircles}>
         <View style={[styles.circle, styles.topLeftCircle]} />
@@ -717,30 +781,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  warningContainer: {
-    backgroundColor: 'rgba(255, 114, 76, 0.1)',
-    borderRadius: 10,
-    padding: 20,
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  warningText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 15,
-  },
-  selectSectionButton: {
-    backgroundColor: '#FF724C',
-    borderRadius: 8,
-    padding: 12,
-    paddingHorizontal: 20,
-  },
-  selectSectionButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '500',
   },
 });
 export default AdminStalls;
