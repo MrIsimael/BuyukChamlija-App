@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,13 @@ import {
   SafeAreaView,
   ScrollView,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const { width } = Dimensions.get('window');
-const cardWidth = width * 0.4;
 
 const images = {
   barn: require('../../assets/barn.jpg'),
@@ -22,9 +24,142 @@ const images = {
 };
 
 const Home = ({ navigation }) => {
+  const [sections, setSections] = useState([]);
+  const [sectionStalls, setSectionStalls] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSectionsAndStalls = async () => {
+      try {
+        // Fetch sections
+        const sectionsQuery = query(
+          collection(db, 'sections'),
+          orderBy('createdAt', 'desc'),
+        );
+        const sectionsSnapshot = await getDocs(sectionsQuery);
+        const sectionsData = sectionsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setSections(sectionsData);
+
+        // Fetch stalls for each section
+        const stallsData = {};
+        for (const section of sectionsData) {
+          const stallsQuery = query(
+            collection(db, 'stalls'),
+            where('sectionId', '==', section.id),
+            orderBy('stallNumber', 'asc'),
+          );
+          const stallsSnapshot = await getDocs(stallsQuery);
+          stallsData[section.id] = stallsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+        }
+        setSectionStalls(stallsData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSectionsAndStalls();
+  }, []);
+
   const renderImage = (imageName, style) => (
     <Image source={images[imageName]} style={style} resizeMode="cover" />
   );
+
+  const renderSectionWithStalls = section => {
+    const stalls = sectionStalls[section.id] || [];
+
+    return (
+      <View key={section.id} style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionTitleContainer}>
+            <Feather name="grid" size={24} color="white" />
+            <Text style={styles.sectionTitle}>{section.name}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.viewAllContainer}
+            onPress={() =>
+              navigation.navigate('SectionDetails', { sectionId: section.id })
+            }
+          >
+            <Text style={styles.viewAllText}>View All</Text>
+            <Feather name="chevron-right" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+
+        {stalls.length > 0 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {stalls.map(stall => (
+              <TouchableOpacity
+                key={stall.id}
+                style={styles.stallCard}
+                onPress={() =>
+                  navigation.navigate('StallDetails', {
+                    stallId: stall.id,
+                    sectionId: section.id,
+                  })
+                }
+              >
+                <View style={styles.stallImageContainer}>
+                  {stall.imageUrl ? (
+                    <Image
+                      source={{ uri: stall.imageUrl }}
+                      style={styles.stallImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={styles.stallPlaceholder}>
+                      <Feather name="package" size={30} color="#8F92A1" />
+                    </View>
+                  )}
+                  <View style={styles.editButton}>
+                    <Feather name="chevron-right" size={18} color="#FF724C" />
+                  </View>
+                </View>
+
+                <View style={styles.stallInfo}>
+                  <Text style={styles.stallName}>{stall.name}</Text>
+                  <Text style={styles.stallNumber}>
+                    Stall {stall.stallNumber}
+                  </Text>
+
+                  <View style={styles.stallStats}>
+                    <View style={styles.itemCount}>
+                      <Feather name="box" size={14} color="#8F92A1" />
+                      <Text style={styles.statsText}>
+                        {stall.itemCount || 0} Items
+                      </Text>
+                    </View>
+
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        stall.isOpen ? styles.statusOpen : styles.statusClosed,
+                      ]}
+                    >
+                      <Text style={styles.statusText}>
+                        {stall.isOpen ? 'Open' : 'Closed'}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No stalls available</Text>
+          </View>
+        )}
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -51,29 +186,15 @@ const Home = ({ navigation }) => {
           <Text style={styles.brandText}>Buyuk Chamlija</Text>
         </View>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleContainer}>
-              <Feather name="package" size={24} color="white" />
-              <Text style={styles.sectionTitle}>Products</Text>
-            </View>
-            <TouchableOpacity style={styles.viewAllContainer}>
-              <Text style={styles.viewAllText}>View All</Text>
-              <Feather name="chevron-right" size={24} color="white" />
-            </TouchableOpacity>
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FF724C" />
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <TouchableOpacity style={styles.card}>
-              {renderImage('barn', styles.cardImage)}
-              <Text style={styles.cardName}>The Barn</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.card}>
-              {renderImage('karinja', styles.cardImage)}
-              <Text style={styles.cardName}>The Karinja</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
+        ) : (
+          sections.map(renderSectionWithStalls)
+        )}
 
+        {/* Donation Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleContainer}>
@@ -97,6 +218,7 @@ const Home = ({ navigation }) => {
           </ScrollView>
         </View>
 
+        {/* Festival Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleContainer}>
@@ -220,6 +342,142 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'white',
     marginTop: 4,
+  },
+  sectionCard: {
+    width: width * 0.7,
+    backgroundColor: '#3D3F54',
+    borderRadius: 21,
+    padding: 16,
+    marginRight: 16,
+    marginLeft: 10,
+  },
+  sectionContent: {
+    flex: 1,
+  },
+  sectionName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 4,
+  },
+  stallCount: {
+    fontSize: 14,
+    color: '#FF724C',
+    marginBottom: 8,
+  },
+  sectionDescription: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.7)',
+  },
+  loadingContainer: {
+    height: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    height: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 16,
+  },
+  stallCardBackground: {
+    backgroundColor: '#3D3F54',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stallNumber: {
+    color: '#FF724C',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  loadingContainer: {
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stallCard: {
+    width: 200,
+    backgroundColor: 'rgba(255, 114, 76, 0.25)',
+    borderRadius: 15,
+    marginRight: 16,
+    marginLeft: 10,
+    overflow: 'hidden',
+  },
+  stallImageContainer: {
+    height: 120,
+    width: '100%',
+    backgroundColor: '#2A2C41',
+    position: 'relative',
+  },
+  stallImage: {
+    width: '100%',
+    height: '100%',
+  },
+  stallPlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#3D3F54',
+  },
+  editButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stallInfo: {
+    padding: 12,
+  },
+  stallName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 4,
+  },
+  stallNumber: {
+    fontSize: 14,
+    color: '#FF724C',
+    marginBottom: 8,
+  },
+  stallStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  itemCount: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statsText: {
+    color: '#8F92A1',
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusOpen: {
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+  },
+  statusClosed: {
+    backgroundColor: 'rgba(244, 67, 54, 0.1)',
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#4CAF50',
   },
 });
 
