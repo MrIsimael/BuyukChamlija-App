@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
-  TextInput,
   ScrollView,
   Alert,
   ActivityIndicator,
@@ -26,6 +25,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { db, auth } from '../firebase';
+import CreateStallModal from '../components/CreateStallModal'; // Add this import
 
 const { width } = Dimensions.get('window');
 const cardPadding = 30;
@@ -36,14 +36,29 @@ const AdminStalls = () => {
   const { sectionId } = route.params;
 
   const [stalls, setStalls] = useState([]);
+  const [vendors, setVendors] = useState([]);
   const [sectionDetails, setSectionDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [newStallName, setNewStallName] = useState('');
-  const [newStallDescription, setNewStallDescription] = useState('');
-  const [stallNumber, setStallNumber] = useState('');
+  const [selectedVendorId, setSelectedVendorId] = useState(null);
+  const [showVendorModal, setShowVendorModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // Add this new state for form values
+  const [formValues, setFormValues] = useState({
+    stallNumber: '',
+    stallName: '',
+    description: '',
+  });
+
+  // Add this new handler for form changes
+  const handleChangeValues = useCallback((field, value) => {
+    setFormValues(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+  }, []);
 
   // Check admin status
   const checkAdminStatus = useCallback(async () => {
@@ -74,64 +89,6 @@ const AdminStalls = () => {
   }, [navigation]);
 
   // Fetch section details
-  const fetchStalls = useCallback(async () => {
-    try {
-      setIsLoading(true);
-
-      // First attempt: Try with the compound query
-      try {
-        const stallsQuery = query(
-          collection(db, 'stalls'),
-          where('sectionId', '==', sectionId),
-          orderBy('stallNumber', 'asc'),
-        );
-        const querySnapshot = await getDocs(stallsQuery);
-        const stallsData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setStalls(stallsData);
-      } catch (error) {
-        // If the index doesn't exist yet, fall back to a simple query
-        if (error.code === 'failed-precondition') {
-          // Simpler query without ordering
-          const simpleQuery = query(
-            collection(db, 'stalls'),
-            where('sectionId', '==', sectionId),
-          );
-          const querySnapshot = await getDocs(simpleQuery);
-          const stallsData = querySnapshot.docs
-            .map(doc => ({
-              id: doc.id,
-              ...doc.data(),
-            }))
-            // Sort the results in memory
-            .sort((a, b) => {
-              const numA = parseInt(a.stallNumber);
-              const numB = parseInt(b.stallNumber);
-              return numA - numB;
-            });
-
-          setStalls(stallsData);
-
-          // Show a message about index creation
-          Alert.alert(
-            'Notice',
-            'Creating database index for optimal performance. This may take a few minutes. Some features may be limited until completion.',
-            [{ text: 'OK' }],
-          );
-        } else {
-          throw error; // Rethrow if it's not an indexing error
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching stalls:', error);
-      Alert.alert('Error', 'Failed to load stalls. Please try again later.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [sectionId]);
-
   const fetchSectionDetails = useCallback(async () => {
     try {
       const sectionDoc = await getDoc(doc(db, 'sections', sectionId));
@@ -147,30 +104,104 @@ const AdminStalls = () => {
     }
   }, [sectionId, navigation]);
 
+  // Fetch stalls
+  const fetchStalls = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      try {
+        const stallsQuery = query(
+          collection(db, 'stalls'),
+          where('sectionId', '==', sectionId),
+          orderBy('stallNumber', 'asc'),
+        );
+        const querySnapshot = await getDocs(stallsQuery);
+        const stallsData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setStalls(stallsData);
+      } catch (error) {
+        if (error.code === 'failed-precondition') {
+          const simpleQuery = query(
+            collection(db, 'stalls'),
+            where('sectionId', '==', sectionId),
+          );
+          const querySnapshot = await getDocs(simpleQuery);
+          const stallsData = querySnapshot.docs
+            .map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+            }))
+            .sort((a, b) => {
+              const numA = parseInt(a.stallNumber);
+              const numB = parseInt(b.stallNumber);
+              return numA - numB;
+            });
+
+          setStalls(stallsData);
+          Alert.alert(
+            'Notice',
+            'Creating database index for optimal performance. This may take a few minutes.',
+            [{ text: 'OK' }],
+          );
+        } else {
+          throw error;
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching stalls:', error);
+      Alert.alert('Error', 'Failed to load stalls. Please try again later.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [sectionId]);
+
+  // Fetch vendors
+  const fetchVendors = useCallback(async () => {
+    try {
+      const vendorsQuery = query(
+        collection(db, 'users'),
+        where('role', '==', 'vendor'),
+      );
+      const querySnapshot = await getDocs(vendorsQuery);
+      const vendorList = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setVendors(vendorList);
+    } catch (error) {
+      console.error('Error fetching vendors:', error);
+      Alert.alert('Error', 'Failed to load vendors list');
+    }
+  }, []);
+
   // Load data when component mounts
   useEffect(() => {
     const loadData = async () => {
       const isAdminUser = await checkAdminStatus();
       if (isAdminUser) {
-        await Promise.all([fetchSectionDetails(), fetchStalls()]);
+        await Promise.all([
+          fetchSectionDetails(),
+          fetchStalls(),
+          fetchVendors(),
+        ]);
       }
     };
     loadData();
-  }, [checkAdminStatus, fetchSectionDetails, fetchStalls]);
+  }, [checkAdminStatus, fetchSectionDetails, fetchStalls, fetchVendors]);
 
   const handleCreateStall = useCallback(async () => {
-    if (!newStallName.trim() || !stallNumber.trim()) {
+    if (!formValues.stallName.trim() || !formValues.stallNumber.trim()) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Check if stall number already exists in this section
       const existingStallQuery = query(
         collection(db, 'stalls'),
         where('sectionId', '==', sectionId),
-        where('stallNumber', '==', stallNumber.trim()),
+        where('stallNumber', '==', formValues.stallNumber.trim()),
       );
       const existingStallSnapshot = await getDocs(existingStallQuery);
 
@@ -182,29 +213,30 @@ const AdminStalls = () => {
         return;
       }
 
-      // Create new stall
       await addDoc(collection(db, 'stalls'), {
-        name: newStallName.trim(),
-        description: newStallDescription.trim(),
-        stallNumber: stallNumber.trim(),
+        name: formValues.stallName.trim(),
+        description: formValues.description.trim(),
+        stallNumber: formValues.stallNumber.trim(),
         sectionId,
         createdAt: new Date().toISOString(),
         createdBy: auth.currentUser.uid,
-        isOccupied: false,
-        vendorId: null,
+        isOccupied: !!selectedVendorId,
+        vendorId: selectedVendorId,
         itemCount: 0,
       });
 
-      // Update section's stall count
       const sectionRef = doc(db, 'sections', sectionId);
       await updateDoc(sectionRef, {
         stallCount: (sectionDetails.stallCount || 0) + 1,
       });
 
       setModalVisible(false);
-      setNewStallName('');
-      setNewStallDescription('');
-      setStallNumber('');
+      setFormValues({
+        stallNumber: '',
+        stallName: '',
+        description: '',
+      });
+      setSelectedVendorId(null);
       fetchStalls();
       fetchSectionDetails();
       Alert.alert('Success', 'Stall created successfully');
@@ -215,50 +247,130 @@ const AdminStalls = () => {
       setIsSubmitting(false);
     }
   }, [
-    newStallName,
-    newStallDescription,
-    stallNumber,
+    formValues,
+    selectedVendorId,
     sectionId,
     sectionDetails,
     fetchStalls,
     fetchSectionDetails,
   ]);
 
-  const renderStall = stall => (
-    <TouchableOpacity
-      key={stall.id}
-      style={styles.stallCard}
-      onPress={() =>
-        navigation.navigate('AdminItems', {
-          stallId: stall.id,
-          sectionId: sectionId,
-        })
-      }
+  const renderStall = useCallback(
+    stall => {
+      const vendor = vendors.find(v => v.id === stall.vendorId);
+
+      return (
+        <TouchableOpacity
+          key={stall.id}
+          style={styles.stallCard}
+          onPress={() =>
+            navigation.navigate('AdminItems', {
+              stallId: stall.id,
+              sectionId: sectionId,
+            })
+          }
+        >
+          <View style={styles.stallHeader}>
+            <View style={styles.stallHeaderLeft}>
+              <Text style={styles.stallNumber}>Stall {stall.stallNumber}</Text>
+              <Text style={styles.stallName}>{stall.name}</Text>
+            </View>
+            <View style={styles.stallStatus}>
+              <View
+                style={[
+                  styles.statusIndicator,
+                  stall.isOccupied ? styles.occupied : styles.vacant,
+                ]}
+              />
+              <Text style={styles.statusText}>
+                {stall.isOccupied ? 'Occupied' : 'Vacant'}
+              </Text>
+            </View>
+          </View>
+          {stall.description && (
+            <Text style={styles.stallDescription}>{stall.description}</Text>
+          )}
+          {vendor && (
+            <Text style={styles.vendorName}>
+              Vendor: {vendor.name || vendor.email}
+            </Text>
+          )}
+          <View style={styles.stallFooter}>
+            <Text style={styles.itemCount}>{stall.itemCount} Items</Text>
+          </View>
+        </TouchableOpacity>
+      );
+    },
+    [vendors, navigation, sectionId],
+  );
+
+  const VendorSelectionModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={showVendorModal}
+      onRequestClose={() => setShowVendorModal(false)}
     >
-      <View style={styles.stallHeader}>
-        <View style={styles.stallHeaderLeft}>
-          <Text style={styles.stallNumber}>Stall {stall.stallNumber}</Text>
-          <Text style={styles.stallName}>{stall.name}</Text>
-        </View>
-        <View style={styles.stallStatus}>
-          <View
-            style={[
-              styles.statusIndicator,
-              stall.isOccupied ? styles.occupied : styles.vacant,
-            ]}
-          />
-          <Text style={styles.statusText}>
-            {stall.isOccupied ? 'Occupied' : 'Vacant'}
-          </Text>
-        </View>
-      </View>
-      {stall.description && (
-        <Text style={styles.stallDescription}>{stall.description}</Text>
-      )}
-      <View style={styles.stallFooter}>
-        <Text style={styles.itemCount}>{stall.itemCount} Items</Text>
-      </View>
-    </TouchableOpacity>
+      <TouchableOpacity
+        activeOpacity={1}
+        style={styles.modalContainer}
+        onPress={() => setShowVendorModal(false)}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          style={[styles.modalContent, { maxHeight: '70%' }]}
+          onPress={e => e.stopPropagation()}
+        >
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              onPress={() => setShowVendorModal(false)}
+              style={styles.closeButton}
+            >
+              <Feather name="x" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Select Vendor</Text>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <TouchableOpacity
+              style={styles.vendorOption}
+              onPress={() => {
+                setSelectedVendorId(null);
+                setShowVendorModal(false);
+              }}
+            >
+              <Text style={styles.vendorOptionText}>Leave Vacant</Text>
+            </TouchableOpacity>
+
+            {vendors.map(vendor => (
+              <TouchableOpacity
+                key={vendor.id}
+                style={styles.vendorOption}
+                onPress={() => {
+                  setSelectedVendorId(vendor.id);
+                  setShowVendorModal(false);
+                }}
+              >
+                <View style={styles.vendorOptionContent}>
+                  <Feather
+                    name="user"
+                    size={20}
+                    color="#8F92A1"
+                    style={styles.vendorIcon}
+                  />
+                  <View>
+                    <Text style={styles.vendorOptionText}>
+                      {vendor.name || 'Unnamed Vendor'}
+                    </Text>
+                    <Text style={styles.vendorOptionEmail}>{vendor.email}</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
   );
 
   if (isLoading) {
@@ -309,72 +421,18 @@ const AdminStalls = () => {
         )}
       </ScrollView>
 
-      <Modal
-        animationType="slide"
-        transparent={true}
+      <CreateStallModal
         visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Create New Stall</Text>
-
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Stall Number"
-                placeholderTextColor="#8F92A1"
-                value={stallNumber}
-                onChangeText={setStallNumber}
-                keyboardType="numeric"
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Stall Name"
-                placeholderTextColor="#8F92A1"
-                value={newStallName}
-                onChangeText={setNewStallName}
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                placeholder="Description (optional)"
-                placeholderTextColor="#8F92A1"
-                value={newStallDescription}
-                onChangeText={setNewStallDescription}
-                multiline
-                numberOfLines={4}
-              />
-            </View>
-
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
-                onPress={() => setModalVisible(false)}
-                disabled={isSubmitting}
-              >
-                <Text style={styles.buttonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, isSubmitting && styles.disabledButton]}
-                onPress={handleCreateStall}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.buttonText}>Create</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setModalVisible(false)}
+        onSubmit={handleCreateStall}
+        isSubmitting={isSubmitting}
+        values={formValues}
+        onChangeValues={handleChangeValues}
+        vendors={vendors}
+        selectedVendorId={selectedVendorId}
+        setShowVendorModal={setShowVendorModal}
+      />
+      <VendorSelectionModal />
 
       <View style={styles.decorativeCircles}>
         <View style={[styles.circle, styles.topLeftCircle]} />
@@ -388,7 +446,6 @@ const AdminStalls = () => {
 };
 
 const styles = StyleSheet.create({
-  // Base Container Styles
   container: {
     flex: 1,
     backgroundColor: '#1E2238',
@@ -398,8 +455,6 @@ const styles = StyleSheet.create({
     padding: cardPadding,
     marginTop: 10,
   },
-
-  // Header Section Styles
   welcomeSection: {
     padding: 16,
     backgroundColor: 'rgba(255, 114, 76, 0.25)',
@@ -420,8 +475,6 @@ const styles = StyleSheet.create({
     marginTop: 35,
     textAlign: 'center',
   },
-
-  // Stall Card Styles
   stallCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 10,
@@ -453,6 +506,11 @@ const styles = StyleSheet.create({
     color: '#8F92A1',
     marginTop: 8,
   },
+  vendorName: {
+    fontSize: 14,
+    color: '#FF724C',
+    marginTop: 8,
+  },
   stallFooter: {
     marginTop: 12,
     paddingTop: 12,
@@ -463,8 +521,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#8F92A1',
   },
-
-  // Status Indicator Styles
   stallStatus: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -485,8 +541,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#8F92A1',
   },
-
-  // Modal Styles
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -495,9 +549,14 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: width - 40,
+    maxHeight: '90%',
     backgroundColor: '#1E2238',
     borderRadius: 10,
     padding: 20,
+  },
+  formSection: {
+    flex: 1,
+    marginBottom: 20,
   },
   modalTitle: {
     fontSize: 24,
@@ -506,8 +565,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
-
-  // Input Styles
   inputContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 10,
@@ -522,8 +579,28 @@ const styles = StyleSheet.create({
     height: 100,
     textAlignVertical: 'top',
   },
-
-  // Button Styles
+  vendorSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+  },
+  vendorSelectorText: {
+    color: '#8F92A1',
+    fontSize: 16,
+  },
+  vendorOption: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  vendorOptionText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+  },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -548,8 +625,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-
-  // Loading State Styles
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -561,8 +636,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
   },
-
-  // Empty State Styles
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -581,8 +654,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
   },
-
-  // Decorative Elements
   decorativeCircles: {
     ...StyleSheet.absoluteFillObject,
     zIndex: -1,
@@ -615,6 +686,101 @@ const styles = StyleSheet.create({
     top: 120,
     left: -100,
   },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 30,
+    position: 'relative',
+  },
+  closeButton: {
+    position: 'absolute',
+    right: 0,
+    zIndex: 1,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    flex: 1,
+    textAlign: 'center',
+  },
+  formSection: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  inputContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  input: {
+    padding: 15,
+    color: '#FFFFFF',
+    fontSize: 16,
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  vendorSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+  },
+  vendorSelectorActive: {
+    backgroundColor: 'rgba(255, 114, 76, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 114, 76, 0.3)',
+  },
+  vendorSelectorContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  vendorSelectorText: {
+    color: '#8F92A1',
+    fontSize: 16,
+    marginLeft: 10,
+  },
+  vendorSelectorTextActive: {
+    color: '#FF724C',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  button: {
+    flex: 1,
+    borderRadius: 10,
+    padding: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  createButton: {
+    backgroundColor: '#FF724C',
+  },
+  disabledButton: {
+    backgroundColor: 'rgba(255, 114, 76, 0.5)',
+    opacity: 0.5,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });
-
 export default AdminStalls;
