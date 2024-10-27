@@ -13,6 +13,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useNavigation, DrawerActions } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
@@ -23,7 +24,8 @@ const images = {
   zakaat: require('../../assets/zakaat.jpg'),
 };
 
-const Home = ({ navigation }) => {
+const Home = () => {
+  const navigation = useNavigation();
   const [sections, setSections] = useState([]);
   const [sectionStalls, setSectionStalls] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -166,17 +168,28 @@ const Home = ({ navigation }) => {
       <ScrollView>
         <View style={styles.welcomeSection}>
           <View style={styles.header}>
-            <TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+            >
               <Feather name="menu" size={22} color="white" />
             </TouchableOpacity>
             <View style={styles.headerRight}>
-              <TouchableOpacity style={styles.headerIcon}>
+              <TouchableOpacity
+                style={styles.headerIcon}
+                onPress={() => navigation.navigate('Search')} // Add navigation for each icon
+              >
                 <Feather name="search" size={22} color="white" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.headerIcon}>
+              <TouchableOpacity
+                style={styles.headerIcon}
+                onPress={() => navigation.navigate('Cart')}
+              >
                 <Feather name="shopping-cart" size={22} color="white" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.headerIcon}>
+              <TouchableOpacity
+                style={styles.headerIcon}
+                onPress={() => navigation.navigate('Profile')}
+              >
                 <Feather name="user" size={22} color="white" />
               </TouchableOpacity>
             </View>

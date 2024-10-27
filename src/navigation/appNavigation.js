@@ -4,7 +4,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import GetStarted from '../screens/GetStarted';
 import LoginScreen from '../screens/LoginScreen';
 import SignUpScreen from '../screens/SignUpScreen';
-import HomeScreen from '../screens/HomeScreen';
 import AdminCreation from '../screens/AdminCreation';
 import AdminDrawerNavigation from './AdminDrawerNavigation';
 import AdminViewItems from '../screens/AdminViewItems';
@@ -15,6 +14,7 @@ import AdminVendors from '../screens/AdminVendors';
 import ForgotPassword from '../screens/ForgotPassword';
 import AdminSections from '../screens/AdminSections';
 import AdminStalls from '../screens/AdminStalls';
+import HomeDrawerNavigation from './HomeDrawerNavigation';
 import allowedRoutes from './allowedRoutes';
 
 const Stack = createNativeStackNavigator();
@@ -27,6 +27,8 @@ const navigateTo = (navigation, route, params = {}) => {
       route !== 'AdminCreation'
     ) {
       navigation.navigate('AdminDrawer', { screen: route, params });
+    } else if (route === 'Home') {
+      navigation.navigate('HomeDrawer'); // Changed this line
     } else {
       navigation.navigate(route, params);
     }
@@ -52,11 +54,6 @@ export default function AppNavigation() {
         <Stack.Screen
           name="SignUp"
           component={SignUpScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Home"
-          component={HomeScreen}
           options={{ headerShown: false }}
         />
         <Stack.Screen
@@ -102,6 +99,11 @@ export default function AppNavigation() {
         <Stack.Screen
           name="AdminStalls"
           component={AdminStalls}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="HomeDrawer" // Changed from HomeDrawerNavigation
+          component={HomeDrawerNavigation}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
