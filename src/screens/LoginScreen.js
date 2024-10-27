@@ -62,28 +62,54 @@ const LoginScreen = ({ navigation }) => {
         const userData = userDoc.data();
         const userRole = userData.role;
 
-        switch (userRole) {
-          case 'admin':
-            navigation.navigate('AdminDrawer', { screen: 'AdminDashboard' });
-            break;
-          case 'vendor':
-            navigation.navigate('AdminDrawer', { screen: 'VendorHome' });
-            break;
-          case 'customer':
-            navigation.navigate('Home');
-            break;
-          default:
-            Alert.alert('Error', 'Invalid user role');
-            await auth.signOut();
-            return;
-        }
-
+        // Store credentials if remember me is checked
         if (rememberMe) {
           await AsyncStorage.setItem('userEmail', email);
           await AsyncStorage.setItem('rememberMe', 'true');
         } else {
           await AsyncStorage.removeItem('userEmail');
           await AsyncStorage.setItem('rememberMe', 'false');
+        }
+
+        // Reset navigation stack and redirect based on role
+        switch (userRole) {
+          case 'admin':
+            navigation.reset({
+              index: 0,
+              routes: [
+                {
+                  name: 'AdminDrawer',
+                  params: { screen: 'AdminDashboard' },
+                },
+              ],
+            });
+            break;
+          case 'vendor':
+            navigation.reset({
+              index: 0,
+              routes: [
+                {
+                  name: 'AdminDrawer',
+                  params: { screen: 'VendorHome' },
+                },
+              ],
+            });
+            break;
+          case 'customer':
+            navigation.reset({
+              index: 0,
+              routes: [
+                {
+                  name: 'HomeDrawer',
+                  params: { screen: 'Home' },
+                },
+              ],
+            });
+            break;
+          default:
+            Alert.alert('Error', 'Invalid user role');
+            await auth.signOut();
+            return;
         }
       } else {
         Alert.alert('Error', 'User profile not found');
@@ -99,6 +125,7 @@ const LoginScreen = ({ navigation }) => {
       } else if (error.code === 'auth/invalid-email') {
         errorMessage = 'Please enter a valid email address';
       }
+      console.error('Login error:', error);
       Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
