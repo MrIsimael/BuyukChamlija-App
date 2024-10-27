@@ -13,6 +13,7 @@ import { Feather } from '@expo/vector-icons';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { setDoc, doc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
+import allowedRoutes from '../navigation/allowedRoutes';
 
 const SignUpScreen = ({ navigation }) => {
   const [name, setName] = useState(''); // Added name state
@@ -72,21 +73,25 @@ const SignUpScreen = ({ navigation }) => {
       );
       const user = userCredential.user;
 
-      // Update the user's display name
       await updateProfile(user, {
         displayName: name,
       });
 
-      // Save user data to Firestore
       await setDoc(doc(db, 'users', user.uid), {
         email: email,
-        name: name, // Add name field
+        name: name,
         role: 'customer',
         createdAt: new Date(),
       });
 
       Alert.alert('Success', 'Account created successfully', [
-        { text: 'OK', onPress: () => navigation.navigate('Login') },
+        {
+          text: 'OK',
+          onPress: () =>
+            navigation.navigate('AuthStack', {
+              screen: allowedRoutes.login,
+            }),
+        },
       ]);
     } catch (error) {
       let errorMessage = 'An error occurred during sign up';
@@ -99,6 +104,12 @@ const SignUpScreen = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleNavigateToLogin = () => {
+    navigation.navigate('AuthStack', {
+      screen: allowedRoutes.login,
+    });
   };
 
   return (
@@ -204,7 +215,7 @@ const SignUpScreen = ({ navigation }) => {
         </TouchableOpacity>
         <View style={styles.signInContainer}>
           <Text style={styles.signInText}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+          <TouchableOpacity onPress={handleNavigateToLogin}>
             <Text style={styles.signInLink}>Sign In</Text>
           </TouchableOpacity>
         </View>

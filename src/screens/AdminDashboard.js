@@ -6,41 +6,58 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Dimensions,
+  Alert,
+  FlatList,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import AdminVendors from './AdminVendors'; // Assuming AdminVendors is imported for the Vendors section
 
 const { width } = Dimensions.get('window');
 const cardPadding = 30;
 const cardGap = 20;
 const cardWidth = (width - 2 * cardPadding - cardGap) / 2;
 
+const DecorativeCircles = () => (
+  <View style={styles.decorativeCircles}>
+    <View style={[styles.circle, styles.topLeftCircle]} />
+    <View style={[styles.circle, styles.bottomRightCircle]} />
+    <View style={[styles.circle, styles.sideRightCircle]} />
+    <View style={[styles.circle, styles.sideRightCircle2]} />
+    <View style={[styles.circle, styles.sideLeftCircle]} />
+  </View>
+);
+
 const AdminDashboard = () => {
   const navigation = useNavigation();
 
   const dashboardItems = [
-    { title: 'Sections', screen: 'AdminSections' },
-    { title: 'Items', screen: 'AdminItems' },
-    { title: 'Customers', screen: 'AdminCustomers' },
-    { title: 'Vendors', screen: 'AdminVendors' },
-    { title: 'Transactions', screen: null }, // Replace with screen when available
-    { title: 'Stalls', screen: null }, // Replace with screen when available
+    { title: 'Sections', screen: 'AdminSections', type: 'large' },
+    { title: 'Items', screen: 'AdminItems', type: 'small' },
+    { title: 'Customers', screen: 'AdminCustomers', type: 'large' },
+    { title: 'Vendors', screen: 'AdminVendors', type: 'small' },
+    { title: 'Events', screen: null, type: 'small' },
   ];
 
-  const renderDashboardItem = (item, index) => {
-    const isSmallCard = index >= 3; // Transactions and Stalls
-    const itemStyle = isSmallCard
-      ? styles.smallDashboardItem
-      : styles.dashboardItem;
+  const renderItem = ({ item, index }) => {
+    const isSmallCard = item.type === 'small';
 
     return (
       <TouchableOpacity
-        key={index}
-        style={itemStyle}
+        style={[
+          isSmallCard ? styles.smallDashboardItem : styles.dashboardItem,
+          // Add margin styles for proper spacing
+          styles.cardWrapper,
+          // Adjust margins for small cards
+          isSmallCard && {
+            marginRight: index % 2 === 0 ? cardGap / 2 : 0,
+            marginLeft: index % 2 === 1 ? cardGap / 2 : 0,
+          },
+        ]}
         onPress={() => {
           if (item.screen) {
             navigation.navigate(item.screen);
+          } else {
+            Alert.alert('Notice', 'This feature is currently unavailable.');
           }
         }}
       >
@@ -59,19 +76,17 @@ const AdminDashboard = () => {
         </View>
         <Text style={styles.headerTitle}>Dashboard</Text>
       </View>
-      <View style={styles.content}>
-        {dashboardItems.slice(0, 3).map(renderDashboardItem)}
-        <View style={styles.smallCardsContainer}>
-          {dashboardItems.slice(3).map(renderDashboardItem)}
-        </View>
-      </View>
-      <View style={styles.decorativeCircles}>
-        <View style={[styles.circle, styles.topLeftCircle]} />
-        <View style={[styles.circle, styles.bottomRightCircle]} />
-        <View style={[styles.circle, styles.sideRightCircle]} />
-        <View style={[styles.circle, styles.sideRightCircle2]} />
-        <View style={[styles.circle, styles.sideLeftCircle]} />
-      </View>
+
+      <FlatList
+        data={dashboardItems}
+        renderItem={renderItem}
+        keyExtractor={(item, index) => index.toString()}
+        contentContainerStyle={styles.content}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
+      />
+
+      <DecorativeCircles />
     </SafeAreaView>
   );
 };
@@ -102,29 +117,33 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   content: {
-    flex: 1,
     padding: cardPadding,
-    marginTop: 10,
+    paddingBottom: cardPadding + 20, // Add extra padding at bottom
+  },
+  row: {
+    justifyContent: 'flex-start',
+    marginBottom: 5,
+  },
+  cardWrapper: {
+    marginBottom: 20,
+    flex: 1,
   },
   dashboardItem: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 10,
+    borderRadius: 20,
     padding: 25,
-    marginBottom: 20,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  smallCardsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    height: 100, // Fixed height for large cards
   },
   smallDashboardItem: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 10,
+    borderRadius: 20,
     padding: 25,
     width: cardWidth,
     justifyContent: 'center',
     alignItems: 'center',
+    height: 100, // Slightly smaller height for small cards
   },
   itemTitle: {
     fontSize: 20,

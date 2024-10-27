@@ -9,10 +9,12 @@ import {
   ScrollView,
   Dimensions,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
+import { useAuth, navigateTo } from '../navigation/appNavigation';
 
 const { width } = Dimensions.get('window');
 
@@ -24,6 +26,7 @@ const images = {
 };
 
 const Home = ({ navigation }) => {
+  const { user } = useAuth(); // Get user from auth context
   const [sections, setSections] = useState([]);
   const [sectionStalls, setSectionStalls] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -161,6 +164,37 @@ const Home = ({ navigation }) => {
     );
   };
 
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      // The navigation will be handled automatically by your AppNavigator
+      // because the auth state will change
+    } catch (error) {
+      Alert.alert('Error', 'Failed to log out. Please try again.');
+    }
+  };
+
+  const handleUserProfile = () => {
+    Alert.alert(
+      'User Options',
+      `Logged in as: ${user?.email || 'User'}`,
+      [
+        {
+          text: 'Logout',
+          onPress: handleLogout,
+          style: 'destructive',
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ],
+      {
+        cancelable: true,
+      },
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
@@ -176,14 +210,19 @@ const Home = ({ navigation }) => {
               <TouchableOpacity style={styles.headerIcon}>
                 <Feather name="shopping-cart" size={22} color="white" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.headerIcon}>
+              <TouchableOpacity
+                style={styles.headerIcon}
+                onPress={handleUserProfile} // Add the onPress handler here
+              >
                 <Feather name="user" size={22} color="white" />
               </TouchableOpacity>
             </View>
           </View>
 
-          <Text style={styles.welcomeText}>Welcome to</Text>
-          <Text style={styles.brandText}>Buyuk Chamlija</Text>
+          <Text style={styles.welcomeText}>Welcome,</Text>
+          <Text style={styles.brandText}>
+            {user?.displayName || 'to Buyuk Chamlija'}
+          </Text>
         </View>
 
         {isLoading ? (
@@ -258,6 +297,7 @@ const styles = StyleSheet.create({
   },
   headerIcon: {
     marginLeft: 16,
+    padding: 8,
   },
   welcomeSection: {
     padding: 16,
