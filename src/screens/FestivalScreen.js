@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,50 +6,66 @@ import {
   StyleSheet,
   SafeAreaView,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const FestivalScreen = ({ navigation }) => {
-  const festivals = [
-    {
-      id: '1',
-      name: 'Kermus',
-      date: '12 May 2024',
-      description:
-        'Annual community celebration with food, activities, and cultural events',
-      activities: [
-        'Food Stalls',
-        'Cultural Performances',
-        "Children's Activities",
-      ],
-      status: 'upcoming',
-    },
-    {
-      id: '2',
-      name: 'Summer Festival',
-      date: '15 July 2024',
-      description:
-        'Summer celebration featuring outdoor activities and special events',
-      activities: ['Outdoor Games', 'Live Music', 'Special Sales'],
-      status: 'upcoming',
-    },
-    {
-      id: '3',
-      name: 'Winter Fair',
-      date: '10 December 2024',
-      description:
-        'Winter celebration with seasonal activities and festivities',
-      activities: [
-        'Winter Market',
-        'Holiday Activities',
-        'Community Gathering',
-      ],
-      status: 'planned',
-    },
-  ];
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Helper function to format Firestore timestamp
+  const formatTimestamp = timestamp => {
+    if (!timestamp) return '';
+    if (timestamp.seconds) {
+      // Convert Firestore timestamp to Date object
+      const date = new Date(timestamp.seconds * 1000);
+      return date.toLocaleDateString();
+    }
+    return timestamp;
+  };
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const eventsQuery = query(
+          collection(db, 'events'),
+          orderBy('date', 'asc'),
+        );
+        const eventsSnapshot = await getDocs(eventsQuery);
+        const eventsData = eventsSnapshot.docs.map(doc => {
+          const data = doc.data();
+          // Process the data to ensure all timestamp fields are converted to strings
+          return {
+            id: doc.id,
+            name: data.name || '',
+            description: data.description || '',
+            location: data.location || '',
+            status: data.status || '',
+            date: formatTimestamp(data.date),
+            endDate: formatTimestamp(data.endDate),
+            createdAt: formatTimestamp(data.createdAt),
+            schedule: {
+              startTime: data.schedule?.startTime || '',
+              endTime: data.schedule?.endTime || '',
+            },
+          };
+        });
+        setEvents(eventsData);
+      } catch (error) {
+        console.error('Error fetching events:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
 
   const renderEventCard = event => {
-    const isUpcoming = event.status === 'upcoming';
+    const isActive = event.status === 'active';
 
     return (
       <View key={event.id} style={styles.eventCard}>
@@ -58,29 +74,47 @@ const FestivalScreen = ({ navigation }) => {
           <View
             style={[
               styles.statusBadge,
-              isUpcoming ? styles.upcomingBadge : styles.plannedBadge,
+              isActive ? styles.activeBadge : styles.inactiveBadge,
             ]}
           >
-            <Text style={styles.statusText}>
-              {isUpcoming ? 'Upcoming' : 'Planned'}
+            <Text
+              style={[styles.statusText, isActive && styles.activeStatusText]}
+            >
+              {isActive ? 'Active' : 'Inactive'}
             </Text>
           </View>
         </View>
 
-        <Text style={styles.eventName}>{event.name}</Text>
-        <Text style={styles.description}>{event.description}</Text>
+        <Text style={styles.eventName}>{event.name || 'Unnamed Event'}</Text>
+        <Text style={styles.description}>
+          {event.description || 'No description available'}
+        </Text>
 
-        <View style={styles.activitiesContainer}>
-          <Text style={styles.activitiesTitle}>Activities:</Text>
-          {event.activities.map((activity, index) => (
-            <View key={index} style={styles.activityItem}>
-              <Feather name="check-circle" size={16} color="#FF724C" />
-              <Text style={styles.activityText}>{activity}</Text>
+        <View style={styles.eventDetails}>
+          {event.location ? (
+            <View style={styles.detailItem}>
+              <Feather name="map-pin" size={16} color="#FF724C" />
+              <Text style={styles.detailText}>{event.location}</Text>
             </View>
-          ))}
+          ) : null}
+
+          {event.schedule?.startTime ? (
+            <View style={styles.detailItem}>
+              <Feather name="clock" size={16} color="#FF724C" />
+              <Text style={styles.detailText}>
+                {event.schedule.startTime}
+                {event.schedule.endTime ? ` - ${event.schedule.endTime}` : ''}
+              </Text>
+            </View>
+          ) : null}
         </View>
 
-        <TouchableOpacity style={styles.detailsButton}>
+        <TouchableOpacity
+          style={styles.detailsButton}
+          onPress={() =>
+            navigation.navigate('EventDetails', { eventId: event.id })
+          }
+        >
           <Text style={styles.detailsButtonText}>View Details</Text>
           <Feather name="arrow-right" size={18} color="#FF724C" />
         </TouchableOpacity>
@@ -106,7 +140,17 @@ const FestivalScreen = ({ navigation }) => {
           Mark your calendar for these special dates
         </Text>
 
-        {festivals.map(renderEventCard)}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FF724C" />
+          </View>
+        ) : events.length > 0 ? (
+          events.map(renderEventCard)
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No events scheduled</Text>
+          </View>
+        )}
 
         <View style={styles.notificationSection}>
           <View style={styles.notificationCard}>
@@ -165,6 +209,20 @@ const styles = StyleSheet.create({
     color: '#8F92A1',
     marginBottom: 20,
   },
+  loadingContainer: {
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#8F92A1',
+    fontSize: 16,
+  },
   eventCard: {
     backgroundColor: 'rgba(255, 114, 76, 0.25)',
     borderRadius: 15,
@@ -187,15 +245,18 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
   },
-  upcomingBadge: {
+  activeBadge: {
     backgroundColor: 'rgba(76, 175, 80, 0.1)',
   },
-  plannedBadge: {
+  inactiveBadge: {
     backgroundColor: 'rgba(255, 114, 76, 0.1)',
   },
   statusText: {
     fontSize: 12,
     color: '#FF724C',
+  },
+  activeStatusText: {
+    color: '#4CAF50',
   },
   eventName: {
     fontSize: 24,
@@ -209,20 +270,15 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     lineHeight: 20,
   },
-  activitiesContainer: {
+  eventDetails: {
     marginBottom: 16,
   },
-  activitiesTitle: {
-    fontSize: 16,
-    color: 'white',
-    marginBottom: 8,
-  },
-  activityItem: {
+  detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
   },
-  activityText: {
+  detailText: {
     color: '#8F92A1',
     marginLeft: 8,
   },

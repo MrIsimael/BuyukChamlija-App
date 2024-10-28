@@ -28,7 +28,10 @@ const Home = () => {
   const navigation = useNavigation();
   const [sections, setSections] = useState([]);
   const [sectionStalls, setSectionStalls] = useState({});
+  const [stallItems, setStallItems] = useState({});
   const [isLoading, setIsLoading] = useState(true);
+  const [nextEvent, setNextEvent] = useState(null);
+  const [activeEvents, setActiveEvents] = useState([]);
 
   useEffect(() => {
     const fetchSectionsAndStalls = async () => {
@@ -45,8 +48,10 @@ const Home = () => {
         }));
         setSections(sectionsData);
 
-        // Fetch stalls for each section
+        // Fetch stalls and their items
         const stallsData = {};
+        const itemsData = {};
+
         for (const section of sectionsData) {
           const stallsQuery = query(
             collection(db, 'stalls'),
@@ -54,12 +59,29 @@ const Home = () => {
             orderBy('stallNumber', 'asc'),
           );
           const stallsSnapshot = await getDocs(stallsQuery);
-          stallsData[section.id] = stallsSnapshot.docs.map(doc => ({
+          const stalls = stallsSnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
           }));
+          stallsData[section.id] = stalls;
+
+          // Fetch items for each stall
+          for (const stall of stalls) {
+            const itemsQuery = query(
+              collection(db, 'items'),
+              where('stallId', '==', stall.id),
+              orderBy('createdAt', 'desc'),
+            );
+            const itemsSnapshot = await getDocs(itemsQuery);
+            itemsData[stall.id] = itemsSnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+            }));
+          }
         }
+
         setSectionStalls(stallsData);
+        setStallItems(itemsData);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -68,6 +90,59 @@ const Home = () => {
     };
 
     fetchSectionsAndStalls();
+  }, []);
+
+  useEffect(() => {
+    const fetchNextEvent = async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+        const eventsQuery = query(
+          collection(db, 'events'),
+          where('date', '>=', today),
+          orderBy('date', 'asc'),
+          // limit(1) // Uncomment this if you want only the next event
+        );
+
+        const eventsSnapshot = await getDocs(eventsQuery);
+        if (!eventsSnapshot.empty) {
+          const eventDoc = eventsSnapshot.docs[0];
+          const eventData = eventDoc.data();
+          setNextEvent({
+            id: eventDoc.id,
+            ...eventData,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching next event:', error);
+      }
+    };
+
+    fetchNextEvent();
+  }, []);
+
+  useEffect(() => {
+    const fetchActiveEvents = async () => {
+      try {
+        const eventsQuery = query(
+          collection(db, 'events'),
+          where('status', '==', 'active'),
+          orderBy('date', 'asc'),
+        );
+
+        const eventsSnapshot = await getDocs(eventsQuery);
+        if (!eventsSnapshot.empty) {
+          const events = eventsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setActiveEvents(events);
+        }
+      } catch (error) {
+        console.error('Error fetching active events:', error);
+      }
+    };
+
+    fetchActiveEvents();
   }, []);
 
   const renderImage = (imageName, style) => (
@@ -97,62 +172,76 @@ const Home = () => {
 
         {stalls.length > 0 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {stalls.map(stall => (
-              <TouchableOpacity
-                key={stall.id}
-                style={styles.stallCard}
-                onPress={() =>
-                  navigation.navigate('StallDetails', {
-                    stallId: stall.id,
-                    sectionId: section.id,
-                  })
-                }
-              >
-                <View style={styles.stallImageContainer}>
-                  {stall.imageUrl ? (
-                    <Image
-                      source={{ uri: stall.imageUrl }}
-                      style={styles.stallImage}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View style={styles.stallPlaceholder}>
-                      <Feather name="package" size={30} color="#8F92A1" />
-                    </View>
-                  )}
-                  <View style={styles.editButton}>
-                    <Feather name="chevron-right" size={18} color="#FF724C" />
-                  </View>
-                </View>
+            {stalls.map(stall => {
+              const items = stallItems[stall.id] || [];
+              const itemCount = items.length;
 
-                <View style={styles.stallInfo}>
-                  <Text style={styles.stallName}>{stall.name}</Text>
-                  <Text style={styles.stallNumber}>
-                    Stall {stall.stallNumber}
-                  </Text>
-
-                  <View style={styles.stallStats}>
-                    <View style={styles.itemCount}>
-                      <Feather name="box" size={14} color="#8F92A1" />
-                      <Text style={styles.statsText}>
-                        {stall.itemCount || 0} Items
-                      </Text>
-                    </View>
-
-                    <View
-                      style={[
-                        styles.statusBadge,
-                        stall.isOpen ? styles.statusOpen : styles.statusClosed,
-                      ]}
-                    >
-                      <Text style={styles.statusText}>
-                        {stall.isOpen ? 'Open' : 'Closed'}
-                      </Text>
+              return (
+                <TouchableOpacity
+                  key={stall.id}
+                  style={styles.stallCard}
+                  onPress={() => {
+                    if (itemCount > 0) {
+                      // Navigate to first item if available
+                      navigation.navigate('ItemDetails', {
+                        itemId: items[0].id,
+                        stallId: stall.id,
+                      });
+                    } else {
+                      // Navigate to stall details if no items
+                      navigation.navigate('StallDetails', {
+                        stallId: stall.id,
+                        sectionId: section.id,
+                      });
+                    }
+                  }}
+                >
+                  <View style={styles.stallImageContainer}>
+                    {stall.imageUrl ? (
+                      <Image
+                        source={{ uri: stall.imageUrl }}
+                        style={styles.stallImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={styles.stallPlaceholder}>
+                        <Feather name="package" size={30} color="#8F92A1" />
+                      </View>
+                    )}
+                    <View style={styles.editButton}>
+                      <Feather name="chevron-right" size={18} color="#FF724C" />
                     </View>
                   </View>
-                </View>
-              </TouchableOpacity>
-            ))}
+
+                  <View style={styles.stallInfo}>
+                    <Text style={styles.stallName}>{stall.name}</Text>
+                    <Text style={styles.stallNumber}>
+                      Stall {stall.stallNumber}
+                    </Text>
+
+                    <View style={styles.stallStats}>
+                      <View style={styles.itemCount}>
+                        <Feather name="box" size={14} color="#8F92A1" />
+                        <Text style={styles.statsText}>{itemCount} Items</Text>
+                      </View>
+
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          stall.isOpen
+                            ? styles.statusOpen
+                            : styles.statusClosed,
+                        ]}
+                      >
+                        <Text style={styles.statusText}>
+                          {stall.isOpen ? 'Open' : 'Closed'}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
         ) : (
           <View style={styles.emptyContainer}>
@@ -238,15 +327,55 @@ const Home = () => {
               <Feather name="calendar" size={24} color="white" />
               <Text style={styles.sectionTitle}>Festival Dates</Text>
             </View>
-            <TouchableOpacity style={styles.viewAllContainer}>
+            <TouchableOpacity
+              style={styles.viewAllContainer}
+              onPress={() => navigation.navigate('Festival')}
+            >
               <Text style={styles.viewAllText}>View All</Text>
               <Feather name="chevron-right" size={24} color="white" />
             </TouchableOpacity>
           </View>
-          <View style={styles.festivalCard}>
-            <Text style={styles.festivalDate}>12 May 2024</Text>
-            <Text style={styles.festivalName}>Kermus</Text>
-          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.festivalScrollContent}
+          >
+            {activeEvents.length > 0 ? (
+              activeEvents.map(event => (
+                <TouchableOpacity
+                  key={event.id}
+                  style={styles.festivalCard}
+                  onPress={() => navigation.navigate('Festival')}
+                >
+                  <View style={styles.festivalCardHeader}>
+                    <Text style={styles.festivalDate}>{event.date}</Text>
+                    <View style={styles.activeBadge}>
+                      <Text style={styles.activeBadgeText}>Active</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.festivalName}>{event.name}</Text>
+                  {event.location && (
+                    <View style={styles.festivalLocation}>
+                      <Feather name="map-pin" size={14} color="#8F92A1" />
+                      <Text style={styles.locationText}>{event.location}</Text>
+                    </View>
+                  )}
+                  {event.schedule && (
+                    <View style={styles.festivalTime}>
+                      <Feather name="clock" size={14} color="#8F92A1" />
+                      <Text style={styles.timeText}>
+                        {event.schedule.startTime} - {event.schedule.endTime}
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.festivalCard}>
+                <Text style={styles.festivalName}>No active events</Text>
+              </View>
+            )}
+          </ScrollView>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -491,6 +620,63 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     color: '#4CAF50',
+  },
+  festivalScrollContent: {
+    paddingHorizontal: 8,
+  },
+  festivalCard: {
+    width: 280,
+    backgroundColor: '#3D3F54',
+    padding: 16,
+    borderRadius: 21,
+    marginRight: 16,
+  },
+  festivalCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  festivalDate: {
+    fontSize: 16,
+    color: 'white',
+  },
+  activeBadge: {
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  activeBadgeText: {
+    color: '#4CAF50',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  festivalName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 8,
+  },
+  festivalLocation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  locationText: {
+    color: '#8F92A1',
+    fontSize: 14,
+    marginLeft: 6,
+  },
+  festivalTime: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  timeText: {
+    color: '#8F92A1',
+    fontSize: 14,
+    marginLeft: 6,
   },
 });
 
