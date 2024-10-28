@@ -22,6 +22,7 @@ import Addresses from '../screens/Addresses';
 import Help from '../screens/Help';
 import ItemDetails from '../screens/ItemDetails';
 import SectionDetails from '../screens/SectionDetails';
+import EditProfile from '../screens/EditProfile';
 
 const Stack = createNativeStackNavigator();
 
@@ -145,6 +146,11 @@ export default function AppNavigation() {
         <Stack.Screen
           name="SectionDetails"
           component={SectionDetails}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="EditProfile"
+          component={EditProfile}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
