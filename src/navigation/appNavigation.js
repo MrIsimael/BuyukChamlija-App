@@ -15,7 +15,13 @@ import ForgotPassword from '../screens/ForgotPassword';
 import AdminSections from '../screens/AdminSections';
 import AdminStalls from '../screens/AdminStalls';
 import HomeDrawerNavigation from './HomeDrawerNavigation';
-import allowedRoutes from './allowedRoutes';
+import SavedItems from '../screens/SavedItems';
+import OrderHistory from '../screens/OrderHistory';
+import PaymentMethods from '../screens/PaymentMethods';
+import Addresses from '../screens/Addresses';
+import Help from '../screens/Help';
+import ItemDetails from '../screens/ItemDetails';
+import SectionDetails from '../screens/SectionDetails';
 
 const Stack = createNativeStackNavigator();
 
@@ -28,7 +34,7 @@ const navigateTo = (navigation, route, params = {}) => {
     ) {
       navigation.navigate('AdminDrawer', { screen: route, params });
     } else if (route === 'Home') {
-      navigation.navigate('HomeDrawer'); // Changed this line
+      navigation.navigate('HomeDrawer');
     } else {
       navigation.navigate(route, params);
     }
@@ -102,8 +108,43 @@ export default function AppNavigation() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name="HomeDrawer" // Changed from HomeDrawerNavigation
+          name="HomeDrawer"
           component={HomeDrawerNavigation}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="SavedItems"
+          component={SavedItems}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="OrderHistory"
+          component={OrderHistory}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="PaymentMethods"
+          component={PaymentMethods}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Addresses"
+          component={Addresses}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Help"
+          component={Help}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ItemDetails"
+          component={ItemDetails}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="SectionDetails"
+          component={SectionDetails}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
