@@ -9,113 +9,111 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
-import { auth, db } from '../firebase';
+import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { db, auth } from '../firebase';
 
 const OrderHistory = ({ navigation }) => {
   const [orders, setOrders] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchOrders();
   }, []);
 
   const fetchOrders = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
     try {
-      const user = auth.currentUser;
-      if (user) {
-        const ordersQuery = query(
-          collection(db, 'orders'),
-          where('userId', '==', user.uid),
-          orderBy('createdAt', 'desc'),
-        );
+      const q = query(
+        collection(db, 'receipts'),
+        where('userId', '==', user.uid),
+        orderBy('timestamp', 'desc'),
+      );
 
-        const querySnapshot = await getDocs(ordersQuery);
-        const ordersData = querySnapshot.docs.map(doc => ({
+      const querySnapshot = await getDocs(q);
+      const ordersList = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
           id: doc.id,
-          ...doc.data(),
-        }));
+          ...data,
+          // Convert Firestore timestamp to ISO string
+          timestamp:
+            data.timestamp?.toDate().toISOString() || new Date().toISOString(),
+        };
+      });
 
-        setOrders(ordersData);
-      }
+      setOrders(ordersList);
     } catch (error) {
       console.error('Error fetching orders:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const getStatusColor = status => {
-    switch (status.toLowerCase()) {
-      case 'completed':
-        return '#4CAF50';
-      case 'processing':
-        return '#FF724C';
-      case 'cancelled':
-        return '#FF4C4C';
-      default:
-        return '#8F92A1';
-    }
-  };
-
-  const formatDate = timestamp => {
-    if (!timestamp) return '';
-    const date = timestamp.toDate();
+  const formatDate = dateString => {
+    const date = new Date(dateString);
     return date.toLocaleDateString('en-GB', {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
-  const renderOrderCard = order => (
+  const navigateToOrderDetails = order => {
+    // Ensure all data is serializable
+    const serializedOrder = {
+      ...order,
+      // Ensure timestamp is a string
+      timestamp: order.timestamp,
+      // Ensure all nested data is serializable
+      items: order.items.map(item => ({
+        ...item,
+        price: Number(item.price),
+        quantity: Number(item.quantity),
+      })),
+      totalAmount: Number(order.totalAmount),
+    };
+
+    navigation.navigate('OrderDetails', { order: serializedOrder });
+  };
+
+  const OrderCard = ({ order }) => (
     <TouchableOpacity
-      key={order.id}
       style={styles.orderCard}
-      onPress={() => navigation.navigate('OrderDetails', { orderId: order.id })}
+      onPress={() => navigateToOrderDetails(order)}
     >
       <View style={styles.orderHeader}>
         <View>
-          <Text style={styles.orderNumber}>Order #{order.id.slice(-6)}</Text>
-          <Text style={styles.orderDate}>{formatDate(order.createdAt)}</Text>
+          <Text style={styles.orderDate}>{formatDate(order.timestamp)}</Text>
+          <Text style={styles.transactionId}>{order.transactionId}</Text>
         </View>
-        <View
-          style={[
-            styles.statusBadge,
-            { backgroundColor: `${getStatusColor(order.status)}20` },
-          ]}
-        >
-          <Text
-            style={[styles.statusText, { color: getStatusColor(order.status) }]}
-          >
-            {order.status}
-          </Text>
-        </View>
+        <Text style={styles.orderAmount}>£{order.totalAmount.toFixed(2)}</Text>
       </View>
 
-      <View style={styles.itemsList}>
+      <View style={styles.orderDivider} />
+
+      <View style={styles.orderItems}>
         {order.items.map((item, index) => (
-          <View key={index} style={styles.itemRow}>
-            <View style={styles.itemInfo}>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemQuantity}>x{item.quantity}</Text>
-            </View>
-            <Text style={styles.itemPrice}>£{item.price.toFixed(2)}</Text>
-          </View>
+          <Text key={index} style={styles.orderItemText}>
+            {item.quantity}x {item.name}
+          </Text>
         ))}
       </View>
 
       <View style={styles.orderFooter}>
-        <View style={styles.totalSection}>
-          <Text style={styles.totalLabel}>Total Amount</Text>
-          <Text style={styles.totalAmount}>
-            £{order.totalAmount.toFixed(2)}
+        <View style={styles.paymentMethod}>
+          <Feather name="credit-card" size={16} color="#8F92A1" />
+          <Text style={styles.paymentText}>
+            Card ending in {order.paymentMethod.lastFourDigits}
           </Text>
         </View>
-        <TouchableOpacity style={styles.detailsButton}>
-          <Text style={styles.detailsButtonText}>View Details</Text>
-          <Feather name="chevron-right" size={18} color="#FF724C" />
-        </TouchableOpacity>
+        <View style={styles.orderStatus}>
+          <View style={[styles.statusDot, { backgroundColor: '#4CAF50' }]} />
+          <Text style={styles.statusText}>Completed</Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -127,29 +125,23 @@ const OrderHistory = ({ navigation }) => {
           <Feather name="arrow-left" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Order History</Text>
-        <TouchableOpacity>
-          <Feather name="filter" size={24} color="white" />
-        </TouchableOpacity>
+        <View style={{ width: 24 }} />
       </View>
 
-      {isLoading ? (
+      {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FF724C" />
         </View>
       ) : orders.length > 0 ? (
         <ScrollView style={styles.content}>
-          {orders.map(renderOrderCard)}
+          {orders.map(order => (
+            <OrderCard key={order.id} order={order} />
+          ))}
         </ScrollView>
       ) : (
         <View style={styles.emptyContainer}>
           <Feather name="shopping-bag" size={64} color="#8F92A1" />
           <Text style={styles.emptyText}>No orders yet</Text>
-          <TouchableOpacity
-            style={styles.shopButton}
-            onPress={() => navigation.navigate('Home')}
-          >
-            <Text style={styles.shopButtonText}>Start Shopping</Text>
-          </TouchableOpacity>
         </View>
       )}
     </SafeAreaView>
@@ -178,102 +170,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-  orderCard: {
-    backgroundColor: 'rgba(255, 114, 76, 0.25)',
-    borderRadius: 15,
-    padding: 16,
-    marginBottom: 16,
-  },
-  orderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  orderNumber: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  orderDate: {
-    fontSize: 14,
-    color: '#8F92A1',
-    marginTop: 4,
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  itemsList: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-    paddingTop: 16,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  itemInfo: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  itemName: {
-    fontSize: 16,
-    color: 'white',
-    flex: 1,
-  },
-  itemQuantity: {
-    fontSize: 14,
-    color: '#8F92A1',
-    marginLeft: 8,
-  },
-  itemPrice: {
-    fontSize: 16,
-    color: '#FF724C',
-    fontWeight: '500',
-  },
-  orderFooter: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-    marginTop: 16,
-    paddingTop: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  totalSection: {
-    flex: 1,
-  },
-  totalLabel: {
-    fontSize: 14,
-    color: '#8F92A1',
-  },
-  totalAmount: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
-    marginTop: 4,
-  },
-  detailsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 114, 76, 0.1)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  detailsButtonText: {
-    color: '#FF724C',
-    marginRight: 4,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -286,22 +182,76 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   emptyText: {
-    fontSize: 18,
     color: '#8F92A1',
+    fontSize: 18,
     marginTop: 16,
-    marginBottom: 24,
   },
-  shopButton: {
-    backgroundColor: 'rgba(255, 114, 76, 0.25)',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#FF724C',
+  orderCard: {
+    backgroundColor: 'rgba(255, 114, 76, 0.15)',
+    borderRadius: 15,
+    padding: 16,
+    marginBottom: 16,
   },
-  shopButtonText: {
-    color: '#FF724C',
+  orderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  orderDate: {
+    color: 'white',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  transactionId: {
+    color: '#8F92A1',
+    fontSize: 14,
+    marginTop: 4,
+  },
+  orderAmount: {
+    color: '#FF724C',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  orderDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginVertical: 12,
+  },
+  orderItems: {
+    marginBottom: 12,
+  },
+  orderItemText: {
+    color: '#8F92A1',
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  orderFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  paymentMethod: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  paymentText: {
+    color: '#8F92A1',
+    fontSize: 14,
+    marginLeft: 8,
+  },
+  orderStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  statusText: {
+    color: '#4CAF50',
+    fontSize: 14,
     fontWeight: 'bold',
   },
 });
