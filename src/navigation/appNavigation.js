@@ -23,6 +23,8 @@ import Help from '../screens/Help';
 import ItemDetails from '../screens/ItemDetails';
 import SectionDetails from '../screens/SectionDetails';
 import EditProfile from '../screens/EditProfile';
+import StoreProducts from '../screens/StoreProducts';
+import CartScreen from '../screens/CartScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -151,6 +153,16 @@ export default function AppNavigation() {
         <Stack.Screen
           name="EditProfile"
           component={EditProfile}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="StoreProducts"
+          component={StoreProducts}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="CartScreen"
+          component={CartScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
