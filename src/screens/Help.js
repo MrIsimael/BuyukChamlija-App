@@ -23,13 +23,13 @@ const Help = ({ navigation }) => {
       icon: 'mail',
       title: 'Contact Support',
       description: 'Get help from our team',
-      onPress: () => Linking.openURL('mailto:support@example.com'),
+      onPress: () => Linking.openURL('mailto:info@buyukchamlija.co.za'),
     },
     {
       icon: 'phone',
       title: 'Call Us',
       description: 'Speak with customer service',
-      onPress: () => Linking.openURL('tel:+1234567890'),
+      onPress: () => Linking.openURL('tel:+27 65 585 9178'),
     },
     {
       icon: 'file-text',
