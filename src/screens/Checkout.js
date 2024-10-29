@@ -26,6 +26,10 @@ const Checkout = ({ navigation, route }) => {
   const [transactionId, setTransactionId] = useState('');
   const [receiptData, setReceiptData] = useState(null);
 
+  const formatPrice = price => {
+    return `R${(price || 0).toFixed(2)}`;
+  };
+
   const calculateTotal = () => {
     return items.reduce((total, item) => total + item.price * item.quantity, 0);
   };
@@ -173,7 +177,7 @@ const Checkout = ({ navigation, route }) => {
                 {item.name} x {item.quantity}
               </Text>
               <Text style={styles.receiptItemText}>
-                £{(item.price * item.quantity).toFixed(2)}
+                {formatPrice(item.price * item.quantity)}
               </Text>
             </View>
           ))}
@@ -183,7 +187,7 @@ const Checkout = ({ navigation, route }) => {
           <View style={styles.receiptTotal}>
             <Text style={styles.receiptTotalText}>Total Paid</Text>
             <Text style={styles.receiptTotalAmount}>
-              £{calculateTotal().toFixed(2)}
+              {formatPrice(calculateTotal())}
             </Text>
           </View>
 
@@ -216,7 +220,7 @@ const Checkout = ({ navigation, route }) => {
             <View key={item.id} style={styles.orderItem}>
               <Text style={styles.itemName}>{item.name}</Text>
               <Text style={styles.itemDetails}>
-                {item.quantity} x £{item.price.toFixed(2)}
+                {item.quantity} x {formatPrice(item.price)}
               </Text>
             </View>
           ))}
@@ -280,7 +284,9 @@ const Checkout = ({ navigation, route }) => {
         {/* Total */}
         <View style={styles.totalSection}>
           <Text style={styles.totalLabel}>Total to Pay</Text>
-          <Text style={styles.totalAmount}>£{calculateTotal().toFixed(2)}</Text>
+          <Text style={styles.totalAmount}>
+            {formatPrice(calculateTotal())}
+          </Text>
         </View>
 
         {/* Pay Button */}

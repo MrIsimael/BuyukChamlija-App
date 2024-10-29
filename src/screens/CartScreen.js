@@ -16,6 +16,10 @@ const CartScreen = ({ navigation }) => {
   const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart } =
     useCart();
 
+  const formatPrice = price => {
+    return `R${(price || 0).toFixed(2)}`;
+  };
+
   const handleCheckout = () => {
     Alert.alert(
       'Proceed to Checkout',
@@ -59,7 +63,7 @@ const CartScreen = ({ navigation }) => {
         <View style={styles.itemInfo}>
           <Text style={styles.itemName}>{item.name}</Text>
           <Text style={styles.storeInfo}> Store • {item.stallName}</Text>
-          <Text style={styles.priceText}>£{(item.price || 0).toFixed(2)}</Text>
+          <Text style={styles.priceText}>{formatPrice(item.price)}</Text>
         </View>
       </View>
 
@@ -109,7 +113,7 @@ const CartScreen = ({ navigation }) => {
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Subtotal</Text>
                 <Text style={styles.summaryValue}>
-                  £{getCartTotal().toFixed(2)}
+                  {formatPrice(getCartTotal())}
                 </Text>
               </View>
               <TouchableOpacity
@@ -129,7 +133,7 @@ const CartScreen = ({ navigation }) => {
             <Text style={styles.emptyCartText}>Your cart is empty</Text>
             <TouchableOpacity
               style={styles.continueShoppingButton}
-              onPress={() => navigation.goBack()}
+              onPress={() => navigation.navigate('AllStores')}
             >
               <Text style={styles.continueShoppingText}>Continue Shopping</Text>
             </TouchableOpacity>

@@ -20,6 +20,10 @@ const OrderHistory = ({ navigation }) => {
     fetchOrders();
   }, []);
 
+  const formatPrice = price => {
+    return `R${(price || 0).toFixed(2)}`;
+  };
+
   const fetchOrders = async () => {
     const user = auth.currentUser;
     if (!user) return;
@@ -90,7 +94,7 @@ const OrderHistory = ({ navigation }) => {
           <Text style={styles.orderDate}>{formatDate(order.timestamp)}</Text>
           <Text style={styles.transactionId}>{order.transactionId}</Text>
         </View>
-        <Text style={styles.orderAmount}>£{order.totalAmount.toFixed(2)}</Text>
+        <Text style={styles.orderAmount}>{formatPrice(order.totalAmount)}</Text>
       </View>
 
       <View style={styles.orderDivider} />
