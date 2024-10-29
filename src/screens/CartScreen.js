@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -10,71 +10,11 @@ import {
   Alert,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useCart } from '../context/CartContext';
 
 const CartScreen = ({ navigation }) => {
-  const [cartItems, setCartItems] = useState([
-    {
-      id: '1',
-      name: 'Turkish Delight',
-      price: 12.99,
-      quantity: 2,
-      stallName: 'Sweet Treats',
-      stallNumber: 'A12',
-    },
-    {
-      id: '2',
-      name: 'Handmade Pottery',
-      price: 45.0,
-      quantity: 1,
-      stallName: 'Artisan Crafts',
-      stallNumber: 'B05',
-    },
-    {
-      id: '3',
-      name: 'Traditional Tea Set',
-      price: 35.5,
-      quantity: 1,
-      stallName: 'Tea House',
-      stallNumber: 'C08',
-    },
-  ]);
-
-  const updateQuantity = (id, change) => {
-    setCartItems(items =>
-      items.map(item => {
-        if (item.id === id) {
-          const newQuantity = item.quantity + change;
-          if (newQuantity < 1) return item;
-          return { ...item, quantity: newQuantity };
-        }
-        return item;
-      }),
-    );
-  };
-
-  const removeItem = id => {
-    Alert.alert(
-      'Remove Item',
-      'Are you sure you want to remove this item from your cart?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          onPress: () => {
-            setCartItems(items => items.filter(item => item.id !== id));
-          },
-          style: 'destructive',
-        },
-      ],
-    );
-  };
-
-  const calculateTotal = () => {
-    return cartItems.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0,
-    );
-  };
+  const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart } =
+    useCart();
 
   const handleCheckout = () => {
     Alert.alert(
@@ -90,79 +30,88 @@ const CartScreen = ({ navigation }) => {
     );
   };
 
+  const handleUpdateQuantity = (id, change) => {
+    const item = cartItems.find(item => item.id === id);
+    if (item) {
+      const newQuantity = item.quantity + change;
+      if (newQuantity < 1) {
+        removeFromCart(id);
+      } else {
+        updateQuantity(id, newQuantity);
+      }
+    }
+  };
+
+  const renderCartItem = item => (
+    <View key={item.id} style={styles.cartItem}>
+      <View style={styles.itemRow}>
+        {item.imageUrl ? (
+          <Image
+            source={{ uri: item.imageUrl }}
+            style={styles.itemImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.itemImagePlaceholder}>
+            <Feather name="image" size={24} color="#8F92A1" />
+          </View>
+        )}
+        <View style={styles.itemInfo}>
+          <Text style={styles.itemName}>{item.name}</Text>
+          <Text style={styles.storeInfo}> Store • {item.stallName}</Text>
+          <Text style={styles.priceText}>£{(item.price || 0).toFixed(2)}</Text>
+        </View>
+      </View>
+
+      <View style={styles.quantityContainer}>
+        <TouchableOpacity
+          style={styles.quantityButton}
+          onPress={() => handleUpdateQuantity(item.id, -1)}
+        >
+          <Feather name="minus" size={18} color="#FF724C" />
+        </TouchableOpacity>
+        <Text style={styles.quantityText}>{item.quantity}</Text>
+        <TouchableOpacity
+          style={styles.quantityButton}
+          onPress={() => handleUpdateQuantity(item.id, 1)}
+        >
+          <Feather name="plus" size={18} color="#FF724C" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.removeButton}
+          onPress={() => removeFromCart(item.id)}
+        >
+          <Feather name="trash-2" size={18} color="#FF4C4C" />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.openDrawer()}>
-          <Feather name="menu" size={24} color="white" />
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Feather name="arrow-left" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Cart</Text>
-        <TouchableOpacity>
-          <Feather name="shopping-bag" size={24} color="white" />
+        <TouchableOpacity onPress={clearCart}>
+          <Feather name="trash-2" size={24} color="white" />
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>
         {cartItems.length > 0 ? (
           <>
-            {cartItems.map(item => (
-              <View key={item.id} style={styles.cartItem}>
-                <View style={styles.itemImagePlaceholder}>
-                  <Feather name="package" size={30} color="#8F92A1" />
-                </View>
-                <View style={styles.itemDetails}>
-                  <Text style={styles.itemName}>{item.name}</Text>
-                  <Text style={styles.stallInfo}>
-                    {item.stallName} • Stall {item.stallNumber}
-                  </Text>
-                  <Text style={styles.itemPrice}>£{item.price.toFixed(2)}</Text>
+            {cartItems.map(renderCartItem)}
 
-                  <View style={styles.quantityContainer}>
-                    <TouchableOpacity
-                      style={styles.quantityButton}
-                      onPress={() => updateQuantity(item.id, -1)}
-                    >
-                      <Feather name="minus" size={18} color="#FF724C" />
-                    </TouchableOpacity>
-                    <Text style={styles.quantityText}>{item.quantity}</Text>
-                    <TouchableOpacity
-                      style={styles.quantityButton}
-                      onPress={() => updateQuantity(item.id, 1)}
-                    >
-                      <Feather name="plus" size={18} color="#FF724C" />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.removeButton}
-                      onPress={() => removeItem(item.id)}
-                    >
-                      <Feather name="trash-2" size={18} color="#FF4C4C" />
-                    </TouchableOpacity>
-                  </View>
-                </View>
+            <View style={styles.summaryContainer}>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Subtotal</Text>
+                <Text style={styles.summaryValue}>
+                  £{getCartTotal().toFixed(2)}
+                </Text>
               </View>
-            ))}
-
-            <View style={styles.summarySection}>
-              <View style={styles.summaryCard}>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Subtotal</Text>
-                  <Text style={styles.summaryValue}>
-                    £{calculateTotal().toFixed(2)}
-                  </Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Service Fee</Text>
-                  <Text style={styles.summaryValue}>£2.00</Text>
-                </View>
-                <View style={[styles.summaryRow, styles.totalRow]}>
-                  <Text style={styles.totalLabel}>Total</Text>
-                  <Text style={styles.totalValue}>
-                    £{(calculateTotal() + 2).toFixed(2)}
-                  </Text>
-                </View>
-              </View>
-
               <TouchableOpacity
                 style={styles.checkoutButton}
                 onPress={handleCheckout}
@@ -180,7 +129,7 @@ const CartScreen = ({ navigation }) => {
             <Text style={styles.emptyCartText}>Your cart is empty</Text>
             <TouchableOpacity
               style={styles.continueShoppingButton}
-              onPress={() => navigation.navigate('Home')}
+              onPress={() => navigation.goBack()}
             >
               <Text style={styles.continueShoppingText}>Continue Shopping</Text>
             </TouchableOpacity>
@@ -214,11 +163,19 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   cartItem: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255, 114, 76, 0.25)',
+    backgroundColor: 'rgba(255, 114, 76, 0.15)',
     borderRadius: 15,
     padding: 16,
     marginBottom: 16,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  itemImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
   },
   itemImagePlaceholder: {
     width: 80,
@@ -227,10 +184,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
   },
-  itemDetails: {
+  itemInfo: {
     flex: 1,
+    marginLeft: 12,
   },
   itemName: {
     fontSize: 18,
@@ -238,79 +195,63 @@ const styles = StyleSheet.create({
     color: 'white',
     marginBottom: 4,
   },
-  stallInfo: {
+  storeInfo: {
     fontSize: 14,
     color: '#8F92A1',
     marginBottom: 8,
   },
-  itemPrice: {
+  priceText: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#FF724C',
-    marginBottom: 8,
   },
   quantityContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 20,
   },
   quantityButton: {
-    width: 32,
-    height: 32,
+    width: 40,
+    height: 40,
     backgroundColor: 'rgba(255, 114, 76, 0.1)',
-    borderRadius: 16,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
   quantityText: {
-    fontSize: 16,
+    fontSize: 18,
     color: 'white',
     marginHorizontal: 16,
   },
   removeButton: {
-    marginLeft: 'auto',
-    width: 32,
-    height: 32,
+    width: 40,
+    height: 40,
     backgroundColor: 'rgba(255, 76, 76, 0.1)',
-    borderRadius: 16,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  summarySection: {
-    marginTop: 16,
-    marginBottom: 32,
-  },
-  summaryCard: {
+  summaryContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 15,
     padding: 16,
+    marginTop: 16,
+    marginBottom: 32,
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    alignItems: 'center',
+    marginBottom: 16,
   },
   summaryLabel: {
     color: '#8F92A1',
-    fontSize: 16,
+    fontSize: 18,
   },
   summaryValue: {
     color: 'white',
-    fontSize: 16,
-  },
-  totalRow: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-    paddingTop: 12,
-    marginTop: 12,
-  },
-  totalLabel: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  totalValue: {
-    color: '#FF724C',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   checkoutButton: {
@@ -320,13 +261,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 16,
+    gap: 8,
   },
   checkoutButtonText: {
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
-    marginRight: 8,
   },
   emptyCart: {
     flex: 1,
