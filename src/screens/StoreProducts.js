@@ -38,7 +38,7 @@ const StoreProducts = () => {
 
   useEffect(() => {
     const fetchStoreAndProducts = async () => {
-      console.log('Fetching for storeId:', storeId); // Debug log
+      console.log('Fetching for storeId:', storeId);
 
       if (!storeId) {
         console.error('No storeId provided');
@@ -53,22 +53,22 @@ const StoreProducts = () => {
 
         if (storeSnapshot.exists()) {
           const storeData = { id: storeSnapshot.id, ...storeSnapshot.data() };
-          console.log('Store data:', storeData); // Debug log
+          console.log('Store data:', storeData);
           setStore(storeData);
         } else {
-          console.log('Store not found'); // Debug log
+          console.log('Store not found');
         }
 
         // Fetch products
         const productsRef = collection(db, 'products');
         const productsQuery = query(
           productsRef,
-          where('storeId', '==', storeId), // Try storeId field
+          where('storeId', '==', storeId),
           orderBy('createdAt', 'desc'),
         );
 
         const productsSnapshot = await getDocs(productsQuery);
-        console.log('Products query result size:', productsSnapshot.size); // Debug log
+        console.log('Products query result size:', productsSnapshot.size);
 
         if (productsSnapshot.empty) {
           // If first query is empty, try with 'store' field
@@ -81,11 +81,11 @@ const StoreProducts = () => {
           console.log(
             'Alternative query result size:',
             alternativeSnapshot.size,
-          ); // Debug log
+          );
 
           const productsData = alternativeSnapshot.docs.map(doc => {
             const data = doc.data();
-            console.log('Product data:', data); // Debug log
+            console.log('Product data:', data);
             return {
               id: doc.id,
               ...data,
@@ -95,7 +95,7 @@ const StoreProducts = () => {
         } else {
           const productsData = productsSnapshot.docs.map(doc => {
             const data = doc.data();
-            console.log('Product data:', data); // Debug log
+            console.log('Product data:', data);
             return {
               id: doc.id,
               ...data,
@@ -119,6 +119,10 @@ const StoreProducts = () => {
 
     fetchStoreAndProducts();
   }, [storeId]);
+
+  const formatPrice = price => {
+    return `R${(price || 0).toFixed(2)}`;
+  };
 
   const handleAddToCart = product => {
     if (product.inStock <= 0) {
@@ -171,9 +175,7 @@ const StoreProducts = () => {
       <View style={styles.eventDetails}>
         <View style={styles.detailItem}>
           <Feather name="tag" size={16} color="#FF724C" />
-          <Text style={styles.detailText}>
-            ${(product.price || 0).toFixed(2)}
-          </Text>
+          <Text style={styles.detailText}>{formatPrice(product.price)}</Text>
         </View>
 
         {product.inStock > 0 && (
@@ -212,11 +214,6 @@ const StoreProducts = () => {
     selectedCategory === 'All'
       ? products
       : products.filter(product => product.category === selectedCategory);
-
-  // Move the console logs here if you want to keep them
-  console.log('Current products:', products);
-  console.log('Selected category:', selectedCategory);
-  console.log('Filtered products:', filteredProducts);
 
   return (
     <SafeAreaView style={styles.container}>

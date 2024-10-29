@@ -20,6 +20,7 @@ import DonationsScreen from '../screens/DonationsScreen';
 import FestivalScreen from '../screens/FestivalScreen';
 import CartScreen from '../screens/CartScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import AllStores from '../screens/AllStores';
 
 const Drawer = createDrawerNavigator();
 const screenWidth = Dimensions.get('window').width;
@@ -148,6 +149,16 @@ const HomeDrawerNavigation = () => {
             <Feather name="home" size={24} color={color} />
           ),
           drawerLabel: 'Home',
+        }}
+      />
+      <Drawer.Screen
+        name="AllStores"
+        component={AllStores}
+        options={{
+          drawerIcon: ({ color }) => (
+            <Feather name="shopping-bag" size={24} color={color} />
+          ),
+          drawerLabel: 'All Stores',
         }}
       />
       <Drawer.Screen

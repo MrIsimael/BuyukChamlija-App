@@ -24,6 +24,58 @@ const images = {
   zakaat: require('../../assets/zakaat.jpg'),
 };
 
+const donationOptions = [
+  {
+    id: 'sponsor-student',
+    name: 'Sponsor a Student',
+    description: 'Help support education by sponsoring a student in need',
+    image: images.student,
+    route: 'SponsorStudent',
+    icon: 'book',
+  },
+  {
+    id: 'zakaat',
+    name: 'Zakaat Commitment',
+    description: 'Fulfill your Zakaat obligation and help those in need',
+    image: images.zakaat,
+    route: 'ZakaatCommitment',
+    icon: 'heart',
+  },
+];
+
+const renderDonationCard = (donation, navigation) => (
+  <TouchableOpacity
+    key={donation.id}
+    style={styles.storeCard}
+    onPress={() => navigation.navigate(donation.route)}
+  >
+    <View style={styles.storeImageContainer}>
+      <Image
+        source={donation.image}
+        style={styles.storeImage}
+        resizeMode="cover"
+      />
+      <View style={styles.viewButton}>
+        <Feather name="chevron-right" size={18} color="#FF724C" />
+      </View>
+    </View>
+
+    <View style={styles.storeInfo}>
+      <Text style={styles.storeName}>{donation.name}</Text>
+      <Text style={styles.storeDescription} numberOfLines={2}>
+        {donation.description}
+      </Text>
+
+      <View style={styles.storeStats}>
+        <View style={styles.productCount}>
+          <Feather name={donation.icon} size={14} color="#8F92A1" />
+          <Text style={styles.statsText}>Support Now</Text>
+        </View>
+      </View>
+    </View>
+  </TouchableOpacity>
+);
+
 const Home = () => {
   const navigation = useNavigation();
   const [stores, setStores] = useState([]);
@@ -96,7 +148,7 @@ const Home = () => {
     fetchActiveEvents();
   }, []);
 
-  const renderStoreCard = store => {
+  const renderStoreCard = (store, navigation, storeProducts) => {
     const products = storeProducts[store.id] || [];
     const productCount = products.length;
 
@@ -139,24 +191,6 @@ const Home = () => {
               <Feather name="box" size={14} color="#8F92A1" />
               <Text style={styles.statsText}>{productCount} Products</Text>
             </View>
-
-            <View
-              style={[
-                styles.statusBadge,
-                store.isOpen ? styles.statusOpen : styles.statusClosed,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.statusText,
-                  store.isOpen
-                    ? styles.statusTextOpen
-                    : styles.statusTextClosed,
-                ]}
-              >
-                {store.isOpen ? 'Open' : 'Closed'}
-              </Text>
-            </View>
           </View>
         </View>
       </TouchableOpacity>
@@ -174,12 +208,6 @@ const Home = () => {
               <Feather name="menu" size={22} color="white" />
             </TouchableOpacity>
             <View style={styles.headerRight}>
-              <TouchableOpacity
-                style={styles.headerIcon}
-                onPress={() => navigation.navigate('Search')}
-              >
-                <Feather name="search" size={22} color="white" />
-              </TouchableOpacity>
               <TouchableOpacity
                 style={styles.headerIcon}
                 onPress={() => navigation.navigate('Cart')}
@@ -221,7 +249,9 @@ const Home = () => {
             </View>
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {stores.map(renderStoreCard)}
+              {stores.map(store =>
+                renderStoreCard(store, navigation, storeProducts),
+              )}
             </ScrollView>
           )}
         </View>
@@ -242,28 +272,9 @@ const Home = () => {
             </TouchableOpacity>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() => navigation.navigate('SponsorStudent')}
-            >
-              <Image
-                source={images.student}
-                style={styles.cardImage}
-                resizeMode="cover"
-              />
-              <Text style={styles.cardName}>Sponsor a Student</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() => navigation.navigate('ZakaatCommitment')}
-            >
-              <Image
-                source={images.zakaat}
-                style={styles.cardImage}
-                resizeMode="cover"
-              />
-              <Text style={styles.cardName}>Zakaat Commitment</Text>
-            </TouchableOpacity>
+            {donationOptions.map(donation =>
+              renderDonationCard(donation, navigation),
+            )}
           </ScrollView>
         </View>
 
@@ -445,7 +456,6 @@ const styles = StyleSheet.create({
   },
   storeStats: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 8,
   },
@@ -557,6 +567,96 @@ const styles = StyleSheet.create({
     height: 200,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  donationProgress: {
+    marginTop: 12,
+  },
+  progressBar: {
+    height: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 2,
+    marginBottom: 8,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#FF724C',
+    borderRadius: 2,
+  },
+  donationStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  targetAmount: {
+    backgroundColor: 'rgba(255, 114, 76, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  targetText: {
+    color: '#FF724C',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  // Update existing styles to match
+  storeCard: {
+    width: 280,
+    backgroundColor: 'rgba(255, 114, 76, 0.25)',
+    borderRadius: 15,
+    marginRight: 16,
+    marginLeft: 10,
+    overflow: 'hidden',
+  },
+  storeImageContainer: {
+    height: 160,
+    width: '100%',
+    backgroundColor: '#2A2C41',
+    position: 'relative',
+  },
+  storeImage: {
+    width: '100%',
+    height: '100%',
+  },
+  storePlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#3D3F54',
+  },
+  viewButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  storeInfo: {
+    padding: 16,
+  },
+  storeName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 8,
+  },
+  storeDescription: {
+    fontSize: 14,
+    color: '#8F92A1',
+    marginBottom: 12,
+  },
+  productCount: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statsText: {
+    color: '#8F92A1',
+    fontSize: 14,
+    marginLeft: 6,
   },
 });
 

@@ -40,32 +40,11 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
-  const toggleSetting = async setting => {
-    const user = auth.currentUser;
-    if (user) {
-      try {
-        const newValue = !userData[setting];
-        await updateDoc(doc(db, 'users', user.uid), {
-          [setting]: newValue,
-        });
-        setUserData(prev => ({ ...prev, [setting]: newValue }));
-      } catch (error) {
-        console.error('Error updating setting:', error);
-        Alert.alert('Error', 'Failed to update setting. Please try again.');
-      }
-    }
-  };
-
   const menuItems = [
     {
       icon: 'shopping-bag',
       title: 'Order History',
       onPress: () => navigation.navigate('OrderHistory'),
-    },
-    {
-      icon: 'heart',
-      title: 'Saved Items',
-      onPress: () => navigation.navigate('SavedItems'),
     },
     {
       icon: 'map-pin',
@@ -142,56 +121,15 @@ const ProfileScreen = ({ navigation }) => {
               <Feather name="chevron-right" size={24} color="#8F92A1" />
             </TouchableOpacity>
           ))}
-        </View>
-
-        {/* Settings Section */}
-        <View style={styles.settingsSection}>
-          <Text style={styles.sectionTitle}>Settings</Text>
-          <View style={styles.settingsCard}>
-            <View style={styles.settingItem}>
-              <View style={styles.settingLeft}>
-                <Feather name="bell" size={24} color="#8F92A1" />
-                <Text style={styles.settingText}>Notifications</Text>
-              </View>
-              <Switch
-                value={userData.notificationsEnabled}
-                onValueChange={() => toggleSetting('notificationsEnabled')}
-                trackColor={{
-                  false: '#3D3F54',
-                  true: 'rgba(255, 114, 76, 0.5)',
-                }}
-                thumbColor={
-                  userData.notificationsEnabled ? '#FF724C' : '#8F92A1'
-                }
-              />
-            </View>
-            <View style={styles.settingItem}>
-              <View style={styles.settingLeft}>
-                <Feather name="map-pin" size={24} color="#8F92A1" />
-                <Text style={styles.settingText}>Location Services</Text>
-              </View>
-              <Switch
-                value={userData.locationEnabled}
-                onValueChange={() => toggleSetting('locationEnabled')}
-                trackColor={{
-                  false: '#3D3F54',
-                  true: 'rgba(255, 114, 76, 0.5)',
-                }}
-                thumbColor={userData.locationEnabled ? '#FF724C' : '#8F92A1'}
-              />
-            </View>
+          <View style={styles.helpSection}>
+            <TouchableOpacity
+              style={styles.helpItem}
+              onPress={() => navigation.navigate('Help')}
+            >
+              <Feather name="help-circle" size={24} color="#8F92A1" />
+              <Text style={styles.helpText}>Help & Support</Text>
+            </TouchableOpacity>
           </View>
-        </View>
-
-        {/* Help Section */}
-        <View style={styles.helpSection}>
-          <TouchableOpacity
-            style={styles.helpItem}
-            onPress={() => navigation.navigate('Help')}
-          >
-            <Feather name="help-circle" size={24} color="#8F92A1" />
-            <Text style={styles.helpText}>Help & Support</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Logout Button */}
@@ -302,12 +240,11 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
   helpSection: {
-    marginTop: 24,
+    marginTop: 5,
   },
   helpItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 114, 76, 0.25)',
     padding: 16,
     borderRadius: 15,
   },
