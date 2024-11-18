@@ -4,21 +4,45 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import GetStarted from '../screens/GetStarted';
 import LoginScreen from '../screens/LoginScreen';
 import SignUpScreen from '../screens/SignUpScreen';
-import HomeScreen from '../screens/HomeScreen';
-import AdminSignIn from '../screens/AdminSignIn';
-import AdminDashboard from '../screens/AdminDashboard';
-import AdminCreation from '../screens/AdminCreation'; // Import the AdminCreation screen
-import { isValidRoute } from './utils'; // Import the validation function
-import allowedRoutes from './allowedRoutes'; // Import the allowed routes
+import AdminCreation from '../screens/AdminCreation';
+import AdminDrawerNavigation from './AdminDrawerNavigation';
+import AdminViewItems from '../screens/AdminViewItems';
+import AdminCreateItem from '../screens/AdminCreateItem';
+import { isValidRoute } from './utils';
+import AdminCustomers from '../screens/AdminCustomers';
+import AdminVendors from '../screens/AdminVendors';
+import ForgotPassword from '../screens/ForgotPassword';
+import AdminSections from '../screens/AdminSections';
+import AdminStalls from '../screens/AdminStalls';
+import HomeDrawerNavigation from './HomeDrawerNavigation';
+import SavedItems from '../screens/SavedItems';
+import OrderHistory from '../screens/OrderHistory';
+import PaymentMethods from '../screens/PaymentMethods';
+import Addresses from '../screens/Addresses';
+import Help from '../screens/Help';
+import ItemDetails from '../screens/ItemDetails';
+import SectionDetails from '../screens/SectionDetails';
+import EditProfile from '../screens/EditProfile';
+import StoreProducts from '../screens/StoreProducts';
+import CartScreen from '../screens/CartScreen';
 
 const Stack = createNativeStackNavigator();
 
-const navigateTo = (navigation, route) => {
+const navigateTo = (navigation, route, params = {}) => {
   if (isValidRoute(route)) {
-    navigation.navigate(route);
+    if (
+      route.startsWith('Admin') &&
+      route !== 'AdminSignIn' &&
+      route !== 'AdminCreation'
+    ) {
+      navigation.navigate('AdminDrawer', { screen: route, params });
+    } else if (route === 'Home') {
+      navigation.navigate('HomeDrawer');
+    } else {
+      navigation.navigate(route, params);
+    }
   } else {
     console.warn('Invalid route:', route);
-    // Optionally, you can navigate to a default route or show an error screen
   }
 };
 
@@ -42,24 +66,103 @@ export default function AppNavigation() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name="Home"
-          component={HomeScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="AdminSignIn"
-          component={AdminSignIn}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="AdminDashboard"
-          component={AdminDashboard}
-          options={{ headerShown: false }}
-        />
-
-        <Stack.Screen //Add the AdminCreation screen to the stack navigator
           name="AdminCreation"
           component={AdminCreation}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AdminDrawer"
+          component={AdminDrawerNavigation}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AdminViewItems"
+          component={AdminViewItems}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AdminCreateItem"
+          component={AdminCreateItem}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AdminCustomers"
+          component={AdminCustomers}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AdminVendors"
+          component={AdminVendors}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ForgotPassword"
+          component={ForgotPassword}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AdminSections"
+          component={AdminSections}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AdminStalls"
+          component={AdminStalls}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="HomeDrawer"
+          component={HomeDrawerNavigation}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="SavedItems"
+          component={SavedItems}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="OrderHistory"
+          component={OrderHistory}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="PaymentMethods"
+          component={PaymentMethods}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Addresses"
+          component={Addresses}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Help"
+          component={Help}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ItemDetails"
+          component={ItemDetails}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="SectionDetails"
+          component={SectionDetails}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="EditProfile"
+          component={EditProfile}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="StoreProducts"
+          component={StoreProducts}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="CartScreen"
+          component={CartScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

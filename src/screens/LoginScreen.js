@@ -11,12 +11,10 @@ import {
   Animated,
 } from 'react-native';
 import { Feather, FontAwesome } from '@expo/vector-icons';
-import {
-  signInWithEmailAndPassword,
-  sendPasswordResetEmail,
-} from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { auth } from '../firebase';
+import { auth, db } from '../firebase';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -24,7 +22,7 @@ const LoginScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [fadeAnim] = useState(new Animated.Value(1)); // Start fully visible
+  const [fadeAnim] = useState(new Animated.Value(1));
 
   useEffect(() => {
     retrieveStoredCredentials();
@@ -51,15 +49,72 @@ const LoginScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      if (rememberMe) {
-        await AsyncStorage.setItem('userEmail', email);
-        await AsyncStorage.setItem('rememberMe', 'true');
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
+      const user = userCredential.user;
+
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const userRole = userData.role;
+
+        // Store credentials if remember me is checked
+        if (rememberMe) {
+          await AsyncStorage.setItem('userEmail', email);
+          await AsyncStorage.setItem('rememberMe', 'true');
+        } else {
+          await AsyncStorage.removeItem('userEmail');
+          await AsyncStorage.setItem('rememberMe', 'false');
+        }
+
+        // Reset navigation stack and redirect based on role
+        switch (userRole) {
+          case 'admin':
+            navigation.reset({
+              index: 0,
+              routes: [
+                {
+                  name: 'AdminDrawer',
+                  params: { screen: 'AdminDashboard' },
+                },
+              ],
+            });
+            break;
+          case 'vendor':
+            navigation.reset({
+              index: 0,
+              routes: [
+                {
+                  name: 'AdminDrawer',
+                  params: { screen: 'VendorHome' },
+                },
+              ],
+            });
+            break;
+          case 'customer':
+            navigation.reset({
+              index: 0,
+              routes: [
+                {
+                  name: 'HomeDrawer',
+                  params: { screen: 'Home' },
+                },
+              ],
+            });
+            break;
+          default:
+            Alert.alert('Error', 'Invalid user role');
+            await auth.signOut();
+            return;
+        }
       } else {
-        await AsyncStorage.removeItem('userEmail');
-        await AsyncStorage.setItem('rememberMe', 'false');
+        Alert.alert('Error', 'User profile not found');
+        await auth.signOut();
       }
-      navigation.navigate('Home');
     } catch (error) {
       let errorMessage = 'An error occurred during login';
       if (
@@ -70,30 +125,19 @@ const LoginScreen = ({ navigation }) => {
       } else if (error.code === 'auth/invalid-email') {
         errorMessage = 'Please enter a valid email address';
       }
+      console.error('Login error:', error);
       Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleForgotPassword = async () => {
-    if (!email) {
-      Alert.alert('Error', 'Please enter your email address');
-      return;
-    }
-
-    try {
-      await sendPasswordResetEmail(auth, email);
-      Alert.alert(
-        'Success',
-        'Password reset email sent. Please check your inbox.',
-      );
-    } catch (error) {
-      Alert.alert(
-        'Error',
-        'Failed to send password reset email. Please try again.',
-      );
-    }
+  //Will implement later when every thing works
+  const handleForgotPassword = () => {
+    Alert.alert(
+      'Forgot Password',
+      'A password reset link will be sent to your email.',
+    );
   };
 
   return (
@@ -145,7 +189,9 @@ const LoginScreen = ({ navigation }) => {
             </TouchableOpacity>
             <Text style={styles.rememberMeText}>Remember Me</Text>
           </View>
-          <TouchableOpacity onPress={handleForgotPassword}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('ForgotPassword')}
+          >
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
         </View>
