@@ -12,34 +12,44 @@ import { useNavigation } from '@react-navigation/native';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 
+// Main component for displaying customer list ST10062618
 const AdminCustomers = () => {
-  const navigation = useNavigation();
-  const [customers, setCustomers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const navigation = useNavigation(); // Navigation hook for menu ST10062618
+  const [customers, setCustomers] = useState([]); // State for storing customers list ST10062618
+  const [loading, setLoading] = useState(true); // State for loading indicator ST10062618
 
+  // Fetch customer data from Firestore on component mount ST10062618
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
+        // Query Firestore to get users with role 'customer' ST10062618
         const customersQuery = query(
           collection(db, 'users'),
           where('role', '==', 'customer'),
         );
+
+        // Get the documents from the query ST10062618
         const querySnapshot = await getDocs(customersQuery);
+
+        // Map each document to a customer object and add to state ST10062618
         const customerList = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
         }));
         setCustomers(customerList);
       } catch (error) {
+        // Handle any errors during fetch ST10062618
         console.error('Error fetching customers:', error);
       } finally {
+        // Turn off loading indicator ST10062618
         setLoading(false);
       }
     };
 
-    fetchCustomers();
+    fetchCustomers(); // Initiate customer fetch ST10062618
   }, []);
 
+  // Render function for each customer item in the list ST10062618
   const renderCustomerItem = ({ item }) => (
     <View style={styles.customerItem}>
       <Text style={styles.customerName}>{item.name || 'N/A'}</Text>
@@ -49,6 +59,7 @@ const AdminCustomers = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header with menu button and title ST10062618 */}
       <View style={styles.welcomeSection}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.openDrawer()}>
@@ -57,6 +68,8 @@ const AdminCustomers = () => {
         </View>
         <Text style={styles.headerTitle}>Customers</Text>
       </View>
+
+      {/* Customer list or loading message based on state ST10062618 */}
       <View style={styles.content}>
         {loading ? (
           <Text style={styles.loadingText}>Loading customers...</Text>
@@ -73,6 +86,8 @@ const AdminCustomers = () => {
           </View>
         )}
       </View>
+
+      {/* Background decorative circles ST10062618 */}
       <View style={styles.decorativeCircles}>
         <View style={[styles.circle, styles.topLeftCircle]} />
         <View style={[styles.circle, styles.bottomRightCircle]} />
@@ -84,6 +99,7 @@ const AdminCustomers = () => {
   );
 };
 
+// Styles for component layout and design ST10062618
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -182,4 +198,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AdminCustomers;
+export default AdminCustomers; // Export component ST10062618
