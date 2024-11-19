@@ -13,12 +13,13 @@ import {
 } from '@react-navigation/drawer';
 import { Feather } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore'; // Added Firestore imports
-import { auth, db } from '../firebase'; // Added db import
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 import AdminDashboard from '../screens/AdminDashboard';
 import AdminItems from '../screens/AdminItems';
 import AdminCustomers from '../screens/AdminCustomers';
 import AdminVendors from '../screens/AdminVendors';
+import AdminStores from '../screens/AdminStores'; // Add this import
 
 const Drawer = createDrawerNavigator();
 const screenWidth = Dimensions.get('window').width;
@@ -131,11 +132,11 @@ const AdminDrawerNavigation = () => {
         headerShown: false,
         drawerStyle: {
           backgroundColor: '#1E2238',
-          width: screenWidth * 0.7, // 50% of screen width
+          width: screenWidth * 0.7,
         },
         drawerType: 'front',
-        overlayColor: 'rgba(0,0,0,0.7)', // Darken background when drawer is open
-        swipeEdgeWidth: 50, // Adjust the swipe area width
+        overlayColor: 'rgba(0,0,0,0.7)',
+        swipeEdgeWidth: 50,
         swipeEnabled: true,
       }}
     >
@@ -147,6 +148,16 @@ const AdminDrawerNavigation = () => {
             <Feather name="home" size={24} color={color} />
           ),
           drawerLabel: 'Dashboard',
+        }}
+      />
+      <Drawer.Screen
+        name="AdminStores"
+        component={AdminStores}
+        options={{
+          drawerIcon: ({ color }) => (
+            <Feather name="shopping-bag" size={24} color={color} />
+          ),
+          drawerLabel: 'Stores',
         }}
       />
       <Drawer.Screen
@@ -171,7 +182,7 @@ const AdminDrawerNavigation = () => {
       />
       <Drawer.Screen
         name="AdminVendors"
-        component={AdminVendors} // Add the new screen here
+        component={AdminVendors}
         options={{
           drawerIcon: ({ color }) => (
             <Feather name="briefcase" size={24} color={color} />
@@ -179,7 +190,6 @@ const AdminDrawerNavigation = () => {
           drawerLabel: 'Vendors',
         }}
       />
-      {/* Add other drawer screens here */}
     </Drawer.Navigator>
   );
 };

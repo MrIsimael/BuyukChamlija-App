@@ -8,8 +8,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import AdminVendors from './AdminVendors'; // Assuming AdminVendors is imported for the Vendors section
+import { useNavigation, DrawerActions } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 const cardPadding = 30;
@@ -20,16 +19,34 @@ const AdminDashboard = () => {
   const navigation = useNavigation();
 
   const dashboardItems = [
-    { title: 'Sections', screen: 'AdminSections' },
-    { title: 'Items', screen: 'AdminItems' },
-    { title: 'Customers', screen: 'AdminCustomers' },
-    { title: 'Vendors', screen: 'AdminVendors' },
-    { title: 'Transactions', screen: null }, // Replace with screen when available
-    { title: 'Stalls', screen: null }, // Replace with screen when available
+    {
+      title: 'Stores',
+      screen: 'AdminDrawer',
+      params: { screen: 'AdminStores' },
+      icon: 'shopping-bag',
+    },
+    {
+      title: 'Items',
+      screen: 'AdminDrawer',
+      params: { screen: 'AdminItems' },
+      icon: 'box',
+    },
+    {
+      title: 'Customers',
+      screen: 'AdminDrawer',
+      params: { screen: 'AdminCustomers' },
+      icon: 'users',
+    },
+    {
+      title: 'Vendors',
+      screen: 'AdminDrawer',
+      params: { screen: 'AdminVendors' },
+      icon: 'user',
+    },
   ];
 
   const renderDashboardItem = (item, index) => {
-    const isSmallCard = index >= 3; // Transactions and Stalls
+    const isSmallCard = index >= 3;
     const itemStyle = isSmallCard
       ? styles.smallDashboardItem
       : styles.dashboardItem;
@@ -40,10 +57,16 @@ const AdminDashboard = () => {
         style={itemStyle}
         onPress={() => {
           if (item.screen) {
-            navigation.navigate(item.screen);
+            navigation.navigate(item.screen, item.params);
           }
         }}
       >
+        <Feather
+          name={item.icon}
+          size={24}
+          color="#FF724C"
+          style={styles.itemIcon}
+        />
         <Text style={styles.itemTitle}>{item.title}</Text>
       </TouchableOpacity>
     );
@@ -53,18 +76,22 @@ const AdminDashboard = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.welcomeSection}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.openDrawer()}>
+          <TouchableOpacity
+            onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+          >
             <Feather name="menu" size={22} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
         <Text style={styles.headerTitle}>Dashboard</Text>
       </View>
+
       <View style={styles.content}>
         {dashboardItems.slice(0, 3).map(renderDashboardItem)}
         <View style={styles.smallCardsContainer}>
           {dashboardItems.slice(3).map(renderDashboardItem)}
         </View>
       </View>
+
       <View style={styles.decorativeCircles}>
         <View style={[styles.circle, styles.topLeftCircle]} />
         <View style={[styles.circle, styles.bottomRightCircle]} />
@@ -77,13 +104,13 @@ const AdminDashboard = () => {
 };
 
 const styles = StyleSheet.create({
-  welcomeSection: {
-    padding: 16,
-    backgroundColor: 'rgba(255, 114, 76, 0.25)',
-  },
   container: {
     flex: 1,
     backgroundColor: '#1E2238',
+  },
+  welcomeSection: {
+    padding: 16,
+    backgroundColor: 'rgba(255, 114, 76, 0.25)',
   },
   header: {
     flexDirection: 'row',
@@ -113,6 +140,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     justifyContent: 'center',
     alignItems: 'center',
+    height: 120,
   },
   smallCardsContainer: {
     flexDirection: 'row',
@@ -125,6 +153,10 @@ const styles = StyleSheet.create({
     width: cardWidth,
     justifyContent: 'center',
     alignItems: 'center',
+    height: 120,
+  },
+  itemIcon: {
+    marginBottom: 15,
   },
   itemTitle: {
     fontSize: 20,
