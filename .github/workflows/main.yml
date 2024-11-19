@@ -10,6 +10,8 @@ jobs:
   build:
     name: Build APK
     runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     steps:
     # Step 1: Check out the code
     - name: Checkout code
@@ -27,25 +29,19 @@ jobs:
         npm install
         npm install -g eas-cli
 
-    # Step 4: Authenticate with Expo
-    - name: Log in to Expo
-      env:
-        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      run: echo $EXPO_TOKEN | npx eas login
-
-    # Step 5: Configure EAS build
+    # Step 4: Configure EAS build
     - name: Configure EAS build
       run: npx eas build:configure --non-interactive
 
-    # Step 6: Build the APK
+    # Step 5: Build the APK
     - name: Build APK
       run: npx eas build -p android --profile preview --non-interactive --no-wait
 
-    # Step 7: Download the latest build
+    # Step 6: Download the latest build
     - name: Download APK
       run: npx eas build:download --platform android --latest
 
-    # Step 8: Upload APK as an artifact
+    # Step 7: Upload APK as an artifact
     - name: Upload APK
       uses: actions/upload-artifact@v3
       with:
