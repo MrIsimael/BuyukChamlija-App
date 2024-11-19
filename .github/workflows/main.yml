@@ -1,5 +1,4 @@
 name: Expo CI/CD
-
 on:
   push:
     branches:
@@ -7,12 +6,10 @@ on:
   pull_request:
     branches:
       - master
-
 jobs:
   build:
     name: Build APK
     runs-on: ubuntu-latest
-
     steps:
     # Step 1: Check out the code
     - name: Checkout code
@@ -26,19 +23,29 @@ jobs:
 
     # Step 3: Install dependencies
     - name: Install dependencies
-      run: npm install
+      run: |
+        npm install
+        npm install -g eas-cli
 
     # Step 4: Authenticate with Expo
     - name: Log in to Expo
-      run: npx expo login --username ${{ secrets.EXPO_USERNAME }} --password ${{ secrets.EXPO_PASSWORD }}
+      run: npx eas login --username ${{ secrets.EXPO_USERNAME }} --password ${{ secrets.EXPO_PASSWORD }}
 
-    # Step 5: Build the APK
+    # Step 5: Configure EAS build
+    - name: Configure EAS build
+      run: npx eas build:configure
+
+    # Step 6: Build the APK
     - name: Build APK
-      run: npx expo prebuild && npx expo build:android --type apk
+      run: npx eas build -p android --profile preview --non-interactive --no-wait
 
-    # Step 6: Upload APK as an artifact
+    # Step 7: Download the latest build
+    - name: Download APK
+      run: npx eas build:download --platform android --latest
+
+    # Step 8: Upload APK as an artifact
     - name: Upload APK
       uses: actions/upload-artifact@v3
       with:
         name: app-apk
-        path: dist/*.apk
+        path: ./*.apk
