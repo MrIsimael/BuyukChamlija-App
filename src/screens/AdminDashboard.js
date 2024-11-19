@@ -8,35 +8,48 @@ import {
   Dimensions,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import AdminVendors from './AdminVendors'; // Importing AdminVendors for the Vendors section ST10062618
+import { useNavigation, DrawerActions } from '@react-navigation/native';
 
-// Get device width for calculating card sizes dynamically ST10062618
 const { width } = Dimensions.get('window');
-const cardPadding = 30; // Padding for cards ST10062618
-const cardGap = 20; // Gap between cards ST10062618
-const cardWidth = (width - 2 * cardPadding - cardGap) / 2; // Width for small cards ST10062618
+const cardPadding = 30;
+const cardGap = 20;
+const cardWidth = (width - 2 * cardPadding - cardGap) / 2;
 
-// Main Admin Dashboard Component ST10062618
 const AdminDashboard = () => {
-  const navigation = useNavigation(); // Hook for navigation functionality ST10062618
+  const navigation = useNavigation();
 
-  // Array of dashboard items with titles and corresponding screens ST10062618
   const dashboardItems = [
-    { title: 'Sections', screen: 'AdminSections' },
-    { title: 'Items', screen: 'AdminItems' },
-    { title: 'Customers', screen: 'AdminCustomers' },
-    { title: 'Vendors', screen: 'AdminVendors' },
-    { title: 'Transactions', screen: null }, // Replace with screen when available ST10062618
-    { title: 'Stalls', screen: null }, // Replace with screen when available ST10062618
+    {
+      title: 'Stores',
+      screen: 'AdminDrawer',
+      params: { screen: 'AdminStores' },
+      icon: 'shopping-bag',
+    },
+    {
+      title: 'Items',
+      screen: 'AdminDrawer',
+      params: { screen: 'AdminItems' },
+      icon: 'box',
+    },
+    {
+      title: 'Customers',
+      screen: 'AdminDrawer',
+      params: { screen: 'AdminCustomers' },
+      icon: 'users',
+    },
+    {
+      title: 'Vendors',
+      screen: 'AdminDrawer',
+      params: { screen: 'AdminVendors' },
+      icon: 'user',
+    },
   ];
 
-  // Function to render each dashboard item ST10062618
   const renderDashboardItem = (item, index) => {
-    const isSmallCard = index >= 3; // Transactions and Stalls ST10062618
+    const isSmallCard = index >= 3;
     const itemStyle = isSmallCard
       ? styles.smallDashboardItem
-      : styles.dashboardItem; // Style based on card size ST10062618
+      : styles.dashboardItem;
 
     return (
       <TouchableOpacity
@@ -44,10 +57,16 @@ const AdminDashboard = () => {
         style={itemStyle}
         onPress={() => {
           if (item.screen) {
-            navigation.navigate(item.screen); // Navigate to screen if available ST10062618
+            navigation.navigate(item.screen, item.params);
           }
         }}
       >
+        <Feather
+          name={item.icon}
+          size={24}
+          color="#FF724C"
+          style={styles.itemIcon}
+        />
         <Text style={styles.itemTitle}>{item.title}</Text>
       </TouchableOpacity>
     );
@@ -55,25 +74,24 @@ const AdminDashboard = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Welcome Section for header and menu ST10062618 */}
       <View style={styles.welcomeSection}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.openDrawer()}>
+          <TouchableOpacity
+            onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+          >
             <Feather name="menu" size={22} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
         <Text style={styles.headerTitle}>Dashboard</Text>
       </View>
 
-      {/* Content Section with dashboard items ST10062618 */}
       <View style={styles.content}>
-        {dashboardItems.slice(0, 3).map(renderDashboardItem)} {/* Render first 3 items ST10062618 */}
+        {dashboardItems.slice(0, 3).map(renderDashboardItem)}
         <View style={styles.smallCardsContainer}>
-          {dashboardItems.slice(3).map(renderDashboardItem)} {/* Render small cards ST10062618 */}
+          {dashboardItems.slice(3).map(renderDashboardItem)}
         </View>
       </View>
 
-      {/* Background decorative circles for visual styling ST10062618 */}
       <View style={styles.decorativeCircles}>
         <View style={[styles.circle, styles.topLeftCircle]} />
         <View style={[styles.circle, styles.bottomRightCircle]} />
@@ -85,15 +103,14 @@ const AdminDashboard = () => {
   );
 };
 
-// Styles for layout and UI design ST10062618
 const styles = StyleSheet.create({
-  welcomeSection: {
-    padding: 16,
-    backgroundColor: 'rgba(255, 114, 76, 0.25)', // Header background ST10062618
-  },
   container: {
     flex: 1,
-    backgroundColor: '#1E2238', // Main background color ST10062618
+    backgroundColor: '#1E2238',
+  },
+  welcomeSection: {
+    padding: 16,
+    backgroundColor: 'rgba(255, 114, 76, 0.25)',
   },
   header: {
     flexDirection: 'row',
@@ -113,7 +130,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: cardPadding, // Padding around the content ST10062618
+    padding: cardPadding,
     marginTop: 10,
   },
   dashboardItem: {
@@ -123,34 +140,39 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     justifyContent: 'center',
     alignItems: 'center',
+    height: 120,
   },
   smallCardsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between', // Layout for small cards ST10062618
+    justifyContent: 'space-between',
   },
   smallDashboardItem: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 10,
     padding: 25,
-    width: cardWidth, // Dynamic width for small cards ST10062618
+    width: cardWidth,
     justifyContent: 'center',
     alignItems: 'center',
+    height: 120,
+  },
+  itemIcon: {
+    marginBottom: 15,
   },
   itemTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#FFFFFF', // Item title styling ST10062618
+    color: '#FFFFFF',
     textAlign: 'center',
   },
   decorativeCircles: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: -1, // Circles positioned below content ST10062618
+    zIndex: -1,
   },
   circle: {
     position: 'absolute',
     width: 200,
     height: 200,
-    borderRadius: 100, // Circular shapes ST10062618
+    borderRadius: 100,
     opacity: 0.1,
   },
   topLeftCircle: {
@@ -180,4 +202,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AdminDashboard; // Exporting the AdminDashboard component ST10062618
+export default AdminDashboard;
