@@ -29,11 +29,13 @@ jobs:
 
     # Step 4: Authenticate with Expo
     - name: Log in to Expo
-      run: npx eas login --username ${{ secrets.EXPO_USERNAME }} --password ${{ secrets.EXPO_PASSWORD }}
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      run: echo $EXPO_TOKEN | npx eas login
 
     # Step 5: Configure EAS build
     - name: Configure EAS build
-      run: npx eas build:configure
+      run: npx eas build:configure --non-interactive
 
     # Step 6: Build the APK
     - name: Build APK
