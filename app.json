@@ -12,7 +12,8 @@
       "backgroundColor": "#2A2C41"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.praxissolutions.buyukchamlija"
     },
     "android": {
       "package": "com.praxissolutions.buyukchamlija",
