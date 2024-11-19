@@ -1,0 +1,36 @@
+trigger:
+- master  # Branch name 
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+# Step 1: Install Node.js
+- task: NodeTool@0
+  inputs:
+    versionSpec: '16.x'  # Ensure compatibility with Expo
+  displayName: 'Install Node.js'
+
+# Step 2: Install dependencies and Expo CLI
+- script: |
+    npm install -g expo-cli
+    npm install
+  displayName: 'Install dependencies and Expo CLI'
+
+# Step 3: Build Expo app for Android and iOS
+- script: |
+    expo build:android --release-channel default
+    expo build:ios --release-channel default
+  displayName: 'Build Expo app (Android and iOS)'
+
+# Optional: Add a step for linting or testing if needed
+- script: |
+    npm run lint
+    npm test
+  displayName: 'Run linting and tests'
+
+# Step 4: Publish build artifacts (optional)
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathToPublish: './dist'  # Replace with the actual build output path if needed
+  displayName: 'Publish build artifacts'
