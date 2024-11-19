@@ -25,7 +25,9 @@
     "web": {
       "favicon": "./assets/BuyukChamlijaSplash.png"
     },
-    "plugins": ["expo-font"],
+    "plugins": [
+      "expo-font"
+    ],
     "extra": {
       "firebaseApiKey": "FIREBASE_API_KEY",
       "firebaseAuthDomain": "FIREBASE_AUTH_DOMAIN",
@@ -33,7 +35,10 @@
       "firebaseStorageBucket": "FIREBASE_STORAGE_BUCKET",
       "firebaseMessagingSenderId": "FIREBASE_MESSAGING_SENDER_ID",
       "firebaseAppId": "FIREBASE_APP_ID",
-      "firebaseMeasurementId": "FIREBASE_MEASUREMENT_ID"
+      "firebaseMeasurementId": "FIREBASE_MEASUREMENT_ID",
+      "eas": {
+        "projectId": "c53a6215-5c0d-4d03-9fcd-34eb55e3e0a5"
+      }
     }
   }
 }
