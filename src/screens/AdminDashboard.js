@@ -38,7 +38,7 @@ const AdminDashboard = () => {
       icon: 'users',
     },
     {
-      title: 'Vendors',
+      title: 'Vendor',
       screen: 'AdminDrawer',
       params: { screen: 'AdminVendors' },
       icon: 'user',
