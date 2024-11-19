@@ -27,11 +27,28 @@ jobs:
     - name: Install dependencies
       run: |
         npm install
-        npm install -g eas-cli
+        npm install -g eas-cli@latest
 
-    # Step 4: Configure EAS build
-    - name: Configure EAS build
-      run: npx eas build:configure --non-interactive
+    # Step 4: Create eas.json if it doesn't exist
+    - name: Create eas.json
+      run: |
+        cat > eas.json << EOF
+        {
+          "cli": {
+            "version": ">= 13.3.0",
+            "appVersionSource": "remote"
+          },
+          "build": {
+            "preview": {
+              "distribution": "internal",
+              "android": {
+                "buildType": "apk",
+                "gradleCommand": ":app:assembleRelease"
+              }
+            }
+          }
+        }
+        EOF
 
     # Step 5: Build the APK
     - name: Build APK
@@ -39,11 +56,11 @@ jobs:
 
     # Step 6: Download the latest build
     - name: Download APK
-      run: npx eas build:download --platform android --latest
+      run: npx eas build:status --platform android --latest --output=app.apk
 
     # Step 7: Upload APK as an artifact
     - name: Upload APK
       uses: actions/upload-artifact@v3
       with:
         name: app-apk
-        path: ./*.apk
+        path: ./app.apk
