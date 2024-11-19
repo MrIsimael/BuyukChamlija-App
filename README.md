@@ -19,7 +19,7 @@ npm install
 
 To run the application, use one of the following commands:
 
-- For Expo Go: `npm start`
+- For Expo Go: `npm expo start --clear`
 - For Android: `npm run android`
 - For iOS: `npm run ios`
 - For web: `npm run web`
