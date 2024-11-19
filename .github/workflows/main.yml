@@ -29,9 +29,26 @@ jobs:
         npm install
         npm install -g eas-cli
 
-    # Step 4: Configure EAS build
-    - name: Configure EAS build
-      run: npx eas build:configure --non-interactive
+    # Step 4: Create eas.json if it doesn't exist
+    - name: Create eas.json
+      run: |
+        cat > eas.json << EOF
+        {
+          "cli": {
+            "version": ">= 13.3.0",
+            "appVersionSource": "remote"
+          },
+          "build": {
+            "preview": {
+              "distribution": "internal",
+              "android": {
+                "buildType": "apk",
+                "gradleCommand": ":app:assembleRelease"
+              }
+            }
+          }
+        }
+        EOF
 
     # Step 5: Build the APK
     - name: Build APK
