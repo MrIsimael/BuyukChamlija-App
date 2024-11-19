@@ -1,4 +1,5 @@
 name: Expo CI/CD
+
 on:
   push:
     branches:
@@ -6,6 +7,7 @@ on:
   pull_request:
     branches:
       - master
+
 jobs:
   build:
     name: Build APK
@@ -52,11 +54,29 @@ jobs:
 
     # Step 5: Build the APK
     - name: Build APK
-      run: npx eas build -p android --profile preview --non-interactive --no-wait
+      run: npx eas build -p android --profile preview --non-interactive
 
-    # Step 6: Download the latest build
-    - name: Download APK
-      run: npx eas build:status --platform android --latest --output=app.apk
+    # Step 6: Wait for build to complete and download
+    - name: Wait for build and download APK
+      run: |
+        # Wait for the build to complete
+        BUILD_ID=$(npx eas build:list --platform android --status in-queue,in-progress --non-interactive --json | jq -r '.[0].id')
+        echo "Waiting for build $BUILD_ID to complete..."
+        
+        while true; do
+          STATUS=$(npx eas build:list --id $BUILD_ID --non-interactive --json | jq -r '.[0].status')
+          if [ "$STATUS" = "finished" ]; then
+            break
+          elif [ "$STATUS" = "errored" ]; then
+            echo "Build failed"
+            exit 1
+          fi
+          echo "Build status: $STATUS"
+          sleep 30
+        done
+        
+        # Download the APK
+        npx eas build:download --id $BUILD_ID --output app.apk
 
     # Step 7: Upload APK as an artifact
     - name: Upload APK
