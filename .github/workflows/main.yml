@@ -1,4 +1,4 @@
-name: Expo CI/CD
+name: Build APK with EAS
 
 on:
   push:
@@ -15,95 +15,31 @@ jobs:
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     steps:
-    - name: Checkout code
+    # Step 1: Checkout the code
+    - name: Checkout repository
       uses: actions/checkout@v3
 
+    # Step 2: Set up Node.js
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
         node-version: 18
 
+    # Step 3: Install dependencies
     - name: Install dependencies
       run: |
         npm install
         npm install -g eas-cli@latest
 
-    - name: Create eas.json
+    # Step 4: Build the APK
+    - name: Build APK
       run: |
-        cat > eas.json << EOF
-        {
-          "cli": {
-            "version": ">= 13.3.0",
-            "appVersionSource": "remote"
-          },
-          "build": {
-            "preview": {
-              "distribution": "internal",
-              "android": {
-                "buildType": "apk",
-                "gradleCommand": ":app:assembleRelease"
-              }
-            }
-          }
-        }
-        EOF
+        npx eas build -p android --profile preview --non-interactive
+        echo "Build command completed"
 
-    - name: Build and Download APK
-      run: |
-        echo "Starting build process..."
-        
-        # Start the build and capture the build ID
-        BUILD_OUTPUT=$(npx eas build -p android --profile preview --non-interactive --json)
-        echo "Build command output: $BUILD_OUTPUT"
-        
-        # Extract build ID from the build command output
-        BUILD_ID=$(echo "$BUILD_OUTPUT" | grep -o '"id":"[^"]*"' | cut -d'"' -f4)
-        
-        if [ -z "$BUILD_ID" ]; then
-          echo "Failed to get build ID"
-          exit 1
-        fi
-        
-        echo "Build ID: $BUILD_ID"
-        
-        # Wait for build to complete
-        while true; do
-          echo "Checking build status..."
-          BUILD_STATUS=$(npx eas build:view $BUILD_ID --json)
-          echo "Status check output: $BUILD_STATUS"
-          
-          STATUS=$(echo "$BUILD_STATUS" | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
-          echo "Extracted status: $STATUS"
-          
-          if [ "$STATUS" = "finished" ]; then
-            echo "Build finished successfully"
-            break
-          elif [ "$STATUS" = "errored" ]; then
-            echo "Build failed"
-            exit 1
-          elif [ -z "$STATUS" ]; then
-            echo "Failed to get status"
-            exit 1
-          fi
-          
-          echo "Build status: $STATUS"
-          echo "Waiting 30 seconds before next check..."
-          sleep 30
-        done
-        
-        # Download the APK
-        echo "Downloading APK..."
-        npx eas build:download --id $BUILD_ID --output app.apk
-        
-        if [ ! -f "app.apk" ]; then
-          echo "APK download failed"
-          exit 1
-        fi
-        
-        echo "APK downloaded successfully"
-
+    # Step 5: Upload artifacts
     - name: Upload APK
       uses: actions/upload-artifact@v3
       with:
         name: app-apk
-        path: ./app.apk
+        path: ./builds/*.apk
