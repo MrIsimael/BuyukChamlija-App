@@ -24,7 +24,9 @@ import ItemDetails from '../screens/ItemDetails';
 import SectionDetails from '../screens/SectionDetails';
 import EditProfile from '../screens/EditProfile';
 import StoreProducts from '../screens/StoreProducts';
-import CartScreen from '../screens/CartScreen';
+import AllStores from '../screens/AllStores'; // Add this import
+import Checkout from '../screens/Checkout';
+import OrderDetails from '../screens/OrderDetails';
 
 const Stack = createNativeStackNavigator();
 
@@ -161,8 +163,18 @@ export default function AppNavigation() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name="CartScreen"
-          component={CartScreen}
+          name="AllStores"
+          component={AllStores}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Checkout"
+          component={Checkout}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="OrderDetails"
+          component={OrderDetails}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
